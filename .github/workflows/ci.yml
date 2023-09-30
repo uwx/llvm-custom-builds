@@ -125,6 +125,9 @@ jobs:
 
     needs: [build]
 
+    permissions:
+      contents: write
+
     strategy:
       matrix:
         llvm_version: ['15.x']
@@ -144,7 +147,7 @@ jobs:
         id: create_release
         uses: ncipollo/release-action@v1
         env:
-          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+          GITHUB_TOKEN: ${{ github.token }}
         with:
           tag: ${{ matrix.llvm_version }}
           name: Release ${{ matrix.llvm_version }}
@@ -155,7 +158,7 @@ jobs:
       - name: Upload Release Asset Linux
         uses: actions/upload-release-asset@v1
         env:
-          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+          GITHUB_TOKEN: ${{ github.token }}
         with:
           upload_url: ${{ steps.create_release.outputs.upload_url }}
           asset_path: artifacts/linux-amd64-${{matrix.llvm_version}}/llvm.tar.xz
@@ -165,7 +168,7 @@ jobs:
       - name: Upload Release Asset Linux (ARM64)
         uses: actions/upload-release-asset@v1
         env:
-          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+          GITHUB_TOKEN: ${{ github.token }}
         with:
           upload_url: ${{ steps.create_release.outputs.upload_url }}
           asset_path: artifacts/linux-aarch64-${{matrix.llvm_version}}/llvm.tar.xz
@@ -175,7 +178,7 @@ jobs:
       - name: Upload Release Asset Linux (RISCV64)
         uses: actions/upload-release-asset@v1
         env:
-          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+          GITHUB_TOKEN: ${{ github.token }}
         with:
           upload_url: ${{ steps.create_release.outputs.upload_url }}
           asset_path: artifacts/linux-riscv64-${{matrix.llvm_version}}/llvm.tar.xz
@@ -185,7 +188,7 @@ jobs:
       - name: Upload Release Asset Darwin
         uses: actions/upload-release-asset@v1
         env:
-          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+          GITHUB_TOKEN: ${{ github.token }}
         with:
           upload_url: ${{ steps.create_release.outputs.upload_url }}
           asset_path: artifacts/darwin-amd64-${{matrix.llvm_version}}/llvm.tar.xz
@@ -195,7 +198,7 @@ jobs:
       - name: Upload Release Asset Windows
         uses: actions/upload-release-asset@v1
         env:
-          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+          GITHUB_TOKEN: ${{ github.token }}
         with:
           upload_url: ${{ steps.create_release.outputs.upload_url }}
           asset_path: artifacts/windows-amd64-${{matrix.llvm_version}}/llvm.tar.xz
