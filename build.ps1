@@ -42,7 +42,7 @@ cmake `
   -G "Visual Studio 16 2019" `
   -DCMAKE_BUILD_TYPE=MinSizeRel `
   -DCMAKE_INSTALL_PREFIX=destdir `
-  -DLLVM_ENABLE_PROJECTS="clang;lld" `
+  -DLLVM_ENABLE_PROJECTS="clang;lld;clang-tools-extra;polly" `
   -DLLVM_ENABLE_TERMINFO=OFF `
   -DLLVM_ENABLE_ZLIB=OFF `
   -DLLVM_INCLUDE_DOCS=OFF `
@@ -53,6 +53,8 @@ cmake `
   -DLLVM_INCLUDE_UTILS=OFF `
   -DLLVM_OPTIMIZED_TABLEGEN=ON `
   -DLLVM_TARGETS_TO_BUILD="X86;AArch64;RISCV;WebAssembly" `
+  -DCMAKE_C_FLAGS="/GL /LTCG" `
+  -DCMAKE_CXX_FLAGS="/GL /LTCG" `
   $CROSS_COMPILE `
   $CMAKE_ARGUMENTS `
   ../llvm
