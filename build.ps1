@@ -22,8 +22,7 @@ if (-not (Test-Path -Path "llvm-project" -PathType Container)) {
 
 Set-Location llvm-project
 git fetch origin
-git checkout "release/$LLVM_VERSION"
-git reset --hard origin/"release/$LLVM_VERSION"
+git reset --hard "$LLVM_VERSION"
 
 # Create a directory to build the project.
 New-Item -Path "build" -Force -ItemType "directory"
