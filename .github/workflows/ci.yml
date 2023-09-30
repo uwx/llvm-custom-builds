@@ -9,18 +9,18 @@ jobs:
     strategy:
       matrix:
         target:
-          - id: 'linux-amd64'
-            os: 'ubuntu-20.04'
-            tar_extra_args: ''
-          - id: 'linux-aarch64'
-            os: "ubuntu-latest"
-          #  os: ['self-hosted', 'linux', 'ARM64']
-          - id: 'linux-riscv64'
-            os: "ubuntu-latest"
-          #  os: ['self-hosted', 'linux', 'RISCV64']
-          - id: 'darwin-amd64'
-            os: 'macos-latest'
-            tar_extra_args: ''
+          #- id: 'linux-amd64'
+          #  os: 'ubuntu-20.04'
+          #  tar_extra_args: ''
+          #- id: 'linux-aarch64'
+          #  os: "ubuntu-latest"
+          ##  os: ['self-hosted', 'linux', 'ARM64']
+          #- id: 'linux-riscv64'
+          #  os: "ubuntu-latest"
+          ##  os: ['self-hosted', 'linux', 'RISCV64']
+          #- id: 'darwin-amd64'
+          #  os: 'macos-latest'
+          #  tar_extra_args: ''
           - id: 'windows-amd64'
             os: 'windows-2019'
             # When unpacking an archive on Windows, the symlinks can't be
@@ -30,7 +30,7 @@ jobs:
             # adds an additional copy per link, but it reliably works and
             # the additional size is not too large on Windows.
             tar_extra_args: '--dereference'
-        llvm_version: ['15.x']
+        llvm_version: ['llvmorg-18-init-4631-gd50b56d1']
         llvm_repo_url: ['https://github.com/llvm/llvm-project.git']
       fail-fast: true
 
