@@ -10,19 +10,7 @@ jobs:
     strategy:
       fail-fast: false
       matrix:
-        target:
-          #- id: 'linux-amd64'
-          #  os: 'ubuntu-20.04'
-          #  tar_extra_args: ''
-          #- id: 'linux-aarch64'
-          #  os: "ubuntu-latest"
-          ##  os: ['self-hosted', 'linux', 'ARM64']
-          #- id: 'linux-riscv64'
-          #  os: "ubuntu-latest"
-          ##  os: ['self-hosted', 'linux', 'RISCV64']
-          #- id: 'darwin-amd64'
-          #  os: 'macos-latest'
-          #  tar_extra_args: ''
+        include:
           - id: 'windows-amd64'
             os: 'windows-latest'
             # When unpacking an archive on Windows, the symlinks can't be
@@ -32,77 +20,90 @@ jobs:
             # adds an additional copy per link, but it reliably works and
             # the additional size is not too large on Windows.
             tar_extra_args: '--dereference'
+        sys:
+          - vs
+          - mingw64
+          - mingw32
+          - ucrt64
+          - clang64
+        id: ['windows-amd64']
         llvm_version: ['llvmorg-18-init', 'main', 'llvmorg-18-init-4631-gd50b56d1']
         llvm_repo_url: ['https://github.com/llvm/llvm-project.git']
-        build_tool: ['vs', 'clang']
-
-    runs-on: ${{ matrix.target.os }}
+    env:
+      build_tool: ${{ matrix.sys == 'vs' and 'vs' or 'clang' }}
+    runs-on: ${{ matrix.os }}
 
     steps:
       - name: Check out the code
         uses: actions/checkout@v3
 
-      - name: Setup Ninja
-        if: matrix.build_tool == 'clang'
-        uses: ashutoshvarma/setup-ninja@master
+      #- name: Setup Ninja
+      #  if: matrix.build_tool == 'clang'
+      #  uses: ashutoshvarma/setup-ninja@master
         
+      - uses: msys2/setup-msys2@v2
+        if: env.build_tool == 'clang'
+        with:
+          msystem: ${{matrix.sys}}
+          pacboy: openssl:p llvm:p clang:p lld:p polly:p ninja:p
+
       - run: Get-PSDrive
 
       - name: Install `ninja` on Ubuntu
-        if: startsWith(matrix.target.id, 'linux-')
+        if: startsWith(matrix.id, 'linux-')
         shell: bash
         run: |
           sudo apt-get install ninja-build -y
       
       - name: Install cross-compilatio tools
-        if: matrix.target.id == 'linux-aarch64'
+        if: matrix.id == 'linux-aarch64'
         shell: bash
         run: |
           sudo apt-get install gcc-12-aarch64-linux-gnu g++-12-aarch64-linux-gnu gcc-12-multilib binutils-aarch64-linux-gnu libgcc-12-dev-arm64-cross libstdc++6-arm64-cross -y
 
       - name: Install cross-compilatio tools
-        if: matrix.target.id == 'linux-riscv64'
+        if: matrix.id == 'linux-riscv64'
         shell: bash
         run: |
           sudo apt-get install gcc-12-riscv64-linux-gnu g++-12-riscv64-linux-gnu gcc-12-multilib binutils-riscv64-linux-gnu libgcc-12-dev-riscv64-cross libstdc++6-riscv64-cross -y
 
       - name: Install `ninja` on macOS
-        if: startsWith(matrix.target.id, 'darwin-')
+        if: startsWith(matrix.id, 'darwin-')
         shell: bash
         run: |
           brew install ninja
 
       # TODO(jubianchi): Re-enable this to build on MingW
       # - name: Install `ninja` on Windows
-      #   if: startsWith(matrix.target.id, 'windows-')
+      #   if: startsWith(matrix.id, 'windows-')
       #   shell: bash
       #   run: |
       #     choco install ninja
 
       - name: Build
-        if: matrix.target.id != 'windows-amd64' && matrix.target.id != 'linux-aarch64' && matrix.target.id != 'linux-riscv64'
+        if: matrix.id != 'windows-amd64' && matrix.id != 'linux-aarch64' && matrix.id != 'linux-riscv64'
         shell: bash
         run: |
           ./build.sh ${{ matrix.llvm_version }} ${{ matrix.llvm_repo_url }}
 
       - name: Build (linux-aarch64)
-        if: matrix.target.id == 'linux-aarch64'
+        if: matrix.id == 'linux-aarch64'
         shell: bash
         run: |
           ./build.sh ${{ matrix.llvm_version }} ${{ matrix.llvm_repo_url }} aarch64
 
       - name: Build (linux-aarch64)
-        if: matrix.target.id == 'linux-riscv64'
+        if: matrix.id == 'linux-riscv64'
         shell: bash
         run: |
           ./build.sh ${{ matrix.llvm_version }} ${{ matrix.llvm_repo_url }} riscv64
 
       - name: Build (Windows)
-        if: matrix.target.id == 'windows-amd64'
+        if: matrix.id == 'windows-amd64'
         shell: |
           powershell -Command "& '{0}'"
         run: |
-          ./build.ps1 ${{ matrix.llvm_version }} ${{ matrix.llvm_repo_url }} ${{ matrix.build_tool }}
+          ./build.ps1 ${{ matrix.llvm_version }} ${{ matrix.llvm_repo_url }} ${{ env.build_tool }}
 
       - name: Inspect
         shell: bash
@@ -114,13 +115,13 @@ jobs:
         shell: pwsh
         run: |
           mkdir dist
-          tar --directory C:/llvm-project/build/destdir --create --xz --verbose ${{ matrix.target.tar_extra_args }} --file C:/llvm-project/dist/llvm.tar.xz .
+          tar --directory C:/llvm-project/build/destdir --create --xz --verbose ${{ matrix.tar_extra_args }} --file C:/llvm-project/dist/llvm.tar.xz .
           #ls -lh C:/llvm-project/dist/llvm.tar.xz
 
       - name: Upload Artifacts
         uses: actions/upload-artifact@v3
         with:
-          name: ${{ matrix.target.id }}-${{ matrix.llvm_version }}
+          name: ${{ matrix.id }}-${{ matrix.llvm_version }}
           path: C:/llvm-project/dist
           if-no-files-found: error
           retention-days: 1
