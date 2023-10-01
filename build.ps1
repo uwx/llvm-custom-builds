@@ -42,29 +42,27 @@ $CMAKE_ARGUMENTS = ""
 # Adjust cross compilation
 $CROSS_COMPILE = ""
 
-$SHARED_FLAGS = @"
-  -DCMAKE_BUILD_TYPE=MinSizeRel
-  -DCMAKE_INSTALL_PREFIX=destdir
-  -DLLVM_ENABLE_PROJECTS="clang;lld;clang-tools-extra;polly"
-  -DLLVM_ENABLE_TERMINFO=OFF
-  -DLLVM_ENABLE_ZLIB=OFF
-  -DLLVM_INCLUDE_DOCS=OFF
-  -DLLVM_INCLUDE_EXAMPLES=OFF
-  -DLLVM_INCLUDE_GO_TESTS=OFF
-  -DLLVM_INCLUDE_TESTS=OFF
-  -DLLVM_INCLUDE_TOOLS=ON
-  -DLLVM_INCLUDE_UTILS=OFF
-  -DLLVM_OPTIMIZED_TABLEGEN=ON
-  -DLLVM_TARGETS_TO_BUILD="X86;AArch64;RISCV;WebAssembly"
-  $CROSS_COMPILE
-  $CMAKE_ARGUMENTS
-"@.replace("`n"," ").replace("`r"," ")
+$SHARED_FLAGS = "-DCMAKE_BUILD_TYPE=MinSizeRel",
+  "-DCMAKE_INSTALL_PREFIX=destdir",
+  "-DLLVM_ENABLE_PROJECTS=`"clang;lld;clang-tools-extra;polly`"",
+  "-DLLVM_ENABLE_TERMINFO=OFF",
+  "-DLLVM_ENABLE_ZLIB=OFF",
+  "-DLLVM_INCLUDE_DOCS=OFF",
+  "-DLLVM_INCLUDE_EXAMPLES=OFF",
+  "-DLLVM_INCLUDE_GO_TESTS=OFF",
+  "-DLLVM_INCLUDE_TESTS=OFF",
+  "-DLLVM_INCLUDE_TOOLS=ON",
+  "-DLLVM_INCLUDE_UTILS=OFF",
+  "-DLLVM_OPTIMIZED_TABLEGEN=ON",
+  "-DLLVM_TARGETS_TO_BUILD=`"X86;AArch64;RISCV;WebAssembly`"",
+  "$CROSS_COMPILE",
+  "$CMAKE_ARGUMENTS"
 
 if ($LLVM_BUILD_TOOL -eq "vs") {
     # Run `cmake` to configure the project.
     cmake `
       -G "Visual Studio 17 2022" `
-      $SHARED_FLAGS `
+      @SHARED_FLAGS `
       "$LlvmPath"
     
     # Showtime!
@@ -81,7 +79,7 @@ if ($LLVM_BUILD_TOOL -eq "vs") {
  
     cmake `
       -G Ninja `
-      $SHARED_FLAGS `
+      @SHARED_FLAGS `
       "$LlvmPath"
 
     # Showtime!
