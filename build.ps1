@@ -20,13 +20,15 @@ if (-not (Test-Path -Path "llvm-project" -PathType Container)) {
 	git clone "$LLVM_REPO_URL" llvm-project
 }
 
+$LlvmPath = $((Resolve-Path .).Path)
+
 Set-Location llvm-project
 git fetch origin
 git checkout "$LLVM_VERSION"
 
 # Create a directory to build the project.
-New-Item -Path "build" -Force -ItemType "directory"
-Set-Location build
+New-Item -Path "C:\build" -Force -ItemType "directory"
+Set-Location C:\build
 
 # Create a directory to receive the complete installation.
 New-Item -Path "install" -Force -ItemType "directory"
@@ -53,11 +55,11 @@ cmake `
   -DLLVM_INCLUDE_UTILS=OFF `
   -DLLVM_OPTIMIZED_TABLEGEN=ON `
   -DLLVM_TARGETS_TO_BUILD="X86;AArch64;RISCV;WebAssembly" `
-  -DCMAKE_C_FLAGS="/GL /LTCG" `
-  -DCMAKE_CXX_FLAGS="/GL /LTCG" `
+  -DCMAKE_C_FLAGS="/GL /O2" `
+  -DCMAKE_CXX_FLAGS="/GL /O2" `
   $CROSS_COMPILE `
   $CMAKE_ARGUMENTS `
-  ../llvm
+  "$LlvmPath"
 
 # Showtime!
 cmake --build . --config Release
