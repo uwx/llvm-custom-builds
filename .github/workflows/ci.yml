@@ -31,7 +31,7 @@ jobs:
             # adds an additional copy per link, but it reliably works and
             # the additional size is not too large on Windows.
             tar_extra_args: '--dereference'
-        llvm_version: ['llvmorg-18-init-4631-gd50b56d1']
+        llvm_version: ['llvmorg-18-init', 'main']
         llvm_repo_url: ['https://github.com/llvm/llvm-project.git']
       fail-fast: true
 
