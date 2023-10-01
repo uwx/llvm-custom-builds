@@ -16,7 +16,7 @@ if ([string]::IsNullOrEmpty($LLVM_VERSION)) {
     exit 1
 }
 
-$PROJECT_LOCATION = C:\llvm-project
+$PROJECT_LOCATION = "C:\llvm-project"
 
 # Clone the LLVM project.
 if (-not (Test-Path -Path "llvm-project" -PathType Container)) {
@@ -42,7 +42,7 @@ $CMAKE_ARGUMENTS = ""
 # Adjust cross compilation
 $CROSS_COMPILE = ""
 
-$SHARED_FLAGS = `
+$SHARED_FLAGS = "`
   -DCMAKE_BUILD_TYPE=MinSizeRel `
   -DCMAKE_INSTALL_PREFIX=destdir `
   -DLLVM_ENABLE_PROJECTS="clang;lld;clang-tools-extra;polly" `
@@ -57,7 +57,7 @@ $SHARED_FLAGS = `
   -DLLVM_OPTIMIZED_TABLEGEN=ON `
   -DLLVM_TARGETS_TO_BUILD="X86;AArch64;RISCV;WebAssembly" `
   $CROSS_COMPILE `
-  $CMAKE_ARGUMENTS
+  $CMAKE_ARGUMENTS"
 
 if ($LLVM_BUILD_TOOL -eq "vs") {
     # Run `cmake` to configure the project.
