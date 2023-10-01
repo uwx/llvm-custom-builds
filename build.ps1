@@ -75,7 +75,7 @@ if ($LLVM_BUILD_TOOL -eq "vs") {
     # > usually contains a drive letter like in `C:/Program Files` which cannot
     # > be prepended with some other prefix.
     cmake --install . --strip --config Release
-} else if ($LLVM_BUILD_TOOL -eq "clang") {
+} elseif ($LLVM_BUILD_TOOL -eq "clang") {
     $env:PATH = "C:\msys64\mingw64\bin;$env:PATH"
  
     cmake `
