@@ -31,7 +31,7 @@ jobs:
             # adds an additional copy per link, but it reliably works and
             # the additional size is not too large on Windows.
             tar_extra_args: '--dereference'
-        llvm_version: ['llvmorg-18-init', 'main']
+        llvm_version: ['llvmorg-18-init', 'main', 'llvmorg-18-init-4631-gd50b56d1']
         llvm_repo_url: ['https://github.com/llvm/llvm-project.git']
       fail-fast: true
 
@@ -40,6 +40,8 @@ jobs:
     steps:
       - name: Check out the code
         uses: actions/checkout@v3
+
+      - run: Get-PSDrive
 
       - name: Install `ninja` on Ubuntu
         if: startsWith(matrix.target.id, 'linux-')
@@ -131,7 +133,7 @@ jobs:
 
     strategy:
       matrix:
-        llvm_version: ['15.x']
+        llvm_version: ['llvmorg-18-init', 'main', 'llvmorg-18-init-4631-gd50b56d1']
 
     steps:
       - name: Download the Artifacts
