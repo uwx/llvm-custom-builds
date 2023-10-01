@@ -60,7 +60,7 @@ $SHARED_FLAGS = "-DCMAKE_BUILD_TYPE=MinSizeRel",
 
 if ($LLVM_BUILD_TOOL -eq "vs") {
     # Run `cmake` to configure the project.
-    cmake `
+    msys2 cmake `
       -G "Visual Studio 17 2022" `
       @SHARED_FLAGS `
       "$LlvmPath"
@@ -83,10 +83,10 @@ if ($LLVM_BUILD_TOOL -eq "vs") {
         "C:\msys64\mingw32\bin",
         "$env:PATH") -join ","
  
-    cmake `
+    msys2 cmake `
       -G Ninja `
       @SHARED_FLAGS `
-      "$LlvmPath"
+      "$(cygpath -u $LlvmPath)"
 
     # Showtime!
     cmake --build . --config MinSizeRel
