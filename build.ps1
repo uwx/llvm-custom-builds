@@ -77,7 +77,7 @@ if ($LLVM_BUILD_TOOL -eq "vs") {
     # > be prepended with some other prefix.
     cmake --install . --strip --config Release
 } elseif ($LLVM_BUILD_TOOL -eq "clang") {
-    $env:PATH = "$env:RUNNER_TEMP\msys64\bin;$env:RUNNER_TEMP\msys64\$env:MSYSTEM\bin;$env:RUNNER_TEMP\msys64\usr\bin;$env:PATH"
+    $env:PATH = "$env:RUNNER_TEMP\msys64\bin;$env:RUNNER_TEMP\msys64\$env:MSYSTEM\bin;$env:RUNNER_TEMP\msys64\usr\bin;$env:RUNNER_TEMP\msys64\mingw64\bin;$env:RUNNER_TEMP\msys64\mingw32\bin;$env:PATH"
  
     cmake `
       -G Ninja `
