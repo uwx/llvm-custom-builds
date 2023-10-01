@@ -33,6 +33,7 @@ jobs:
             tar_extra_args: '--dereference'
         llvm_version: ['llvmorg-18-init', 'main', 'llvmorg-18-init-4631-gd50b56d1']
         llvm_repo_url: ['https://github.com/llvm/llvm-project.git']
+        build_tool: ['vs', 'clang']
       fail-fast: true
 
     runs-on: ${{ matrix.target.os }}
@@ -97,7 +98,7 @@ jobs:
         shell: |
           powershell -Command "& '{0}'"
         run: |
-          ./build.ps1 ${{ matrix.llvm_version }} ${{ matrix.llvm_repo_url }}
+          ./build.ps1 ${{ matrix.llvm_version }} ${{ matrix.llvm_repo_url }} ${{ matrix.build_tool }}
 
       - name: Inspect
         shell: bash
@@ -106,17 +107,17 @@ jobs:
           PATH=llvm-project/build/destdir/bin:llvm-project/build/destdir/usr/bin:$PATH clang --version
 
       - name: Zip
-        shell: bash
+        shell: pwsh
         run: |
-          mkdir -p dist
-          tar --directory llvm-project/build/destdir --create --xz --verbose ${{ matrix.target.tar_extra_args }} --file dist/llvm.tar.xz .
-          ls -lh dist/llvm.tar.xz
+          mkdir dist
+          tar --directory C:/llvm-project/build/destdir --create --xz --verbose ${{ matrix.target.tar_extra_args }} --file C:/llvm-project/dist/llvm.tar.xz .
+          #ls -lh C:/llvm-project/dist/llvm.tar.xz
 
       - name: Upload Artifacts
         uses: actions/upload-artifact@v3
         with:
           name: ${{ matrix.target.id }}-${{ matrix.llvm_version }}
-          path: dist
+          path: C:/llvm-project/dist
           if-no-files-found: error
           retention-days: 1
 
