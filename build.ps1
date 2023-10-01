@@ -83,13 +83,13 @@ if ($LLVM_BUILD_TOOL -eq "vs") {
         "C:\msys64\mingw32\bin",
         "$env:PATH") -join ","
  
-    msys2 cmake `
+    C:\Windows\system32\cmd.exe /D /S /C D:\a\_temp\setup-msys2\msys2.cmd cmake `
       -G Ninja `
       @SHARED_FLAGS `
       "$(cygpath -u $LlvmPath)"
 
     # Showtime!
-    cmake --build . --config MinSizeRel
+    C:\Windows\system32\cmd.exe /D /S /C D:\a\_temp\setup-msys2\msys2.cmd cmake --build . --config MinSizeRel
 
-    cmake --install . --strip --config MinSizeRel
+    C:\Windows\system32\cmd.exe /D /S /C D:\a\_temp\setup-msys2\msys2.cmd cmake --install . --strip --config MinSizeRel
 }
