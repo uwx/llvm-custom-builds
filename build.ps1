@@ -20,11 +20,11 @@ if (-not (Test-Path -Path "llvm-project" -PathType Container)) {
 	git clone "$LLVM_REPO_URL" llvm-project
 }
 
-$LlvmPath = $((Resolve-Path .).Path)
-
 Set-Location llvm-project
 git fetch origin
 git checkout "$LLVM_VERSION"
+
+$LlvmPath = $((Resolve-Path ./llvm).Path)
 
 # Create a directory to build the project.
 New-Item -Path "C:\build" -Force -ItemType "directory"
