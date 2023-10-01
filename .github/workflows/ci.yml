@@ -45,7 +45,7 @@ jobs:
         if: env.build_tool == 'clang'
         with:
           msystem: ${{matrix.sys}}
-          pacboy: openssl llvm clang lld polly ninja make cmake
+          pacboy: openssl llvm clang lld polly:p ninja make cmake
 
       - run: Get-PSDrive
 
