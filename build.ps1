@@ -57,7 +57,8 @@ $SHARED_FLAGS = @"
   -DLLVM_OPTIMIZED_TABLEGEN=ON
   -DLLVM_TARGETS_TO_BUILD="X86;AArch64;RISCV;WebAssembly"
   $CROSS_COMPILE
-  $CMAKE_ARGUMENTS"@.replace("`n",", ").replace("`r",", ")
+  $CMAKE_ARGUMENTS
+"@.replace("`n",", ").replace("`r",", ")
 
 if ($LLVM_BUILD_TOOL -eq "vs") {
     # Run `cmake` to configure the project.
