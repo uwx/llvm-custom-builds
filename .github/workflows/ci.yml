@@ -43,7 +43,7 @@ jobs:
         uses: actions/checkout@v3
 
       - name: Setup Ninja
-        if: build_tool == 'clang'
+        if: matrix.build_tool == 'clang'
         uses: ashutoshvarma/setup-ninja@master
         
       - run: Get-PSDrive
