@@ -35,7 +35,6 @@ jobs:
         llvm_version: ['llvmorg-18-init', 'main', 'llvmorg-18-init-4631-gd50b56d1']
         llvm_repo_url: ['https://github.com/llvm/llvm-project.git']
         build_tool: ['vs', 'clang']
-      fail-fast: true
 
     runs-on: ${{ matrix.target.os }}
 
