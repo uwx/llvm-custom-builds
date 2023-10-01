@@ -58,7 +58,7 @@ $SHARED_FLAGS = @"
   -DLLVM_TARGETS_TO_BUILD="X86;AArch64;RISCV;WebAssembly"
   $CROSS_COMPILE
   $CMAKE_ARGUMENTS
-"@.replace("`n",", ").replace("`r",", ")
+"@.replace("`n"," ").replace("`r"," ")
 
 if ($LLVM_BUILD_TOOL -eq "vs") {
     # Run `cmake` to configure the project.
@@ -81,7 +81,7 @@ if ($LLVM_BUILD_TOOL -eq "vs") {
  
     cmake `
       -G Ninja `
-         $SHARED_FLAGS `
+      $SHARED_FLAGS `
       "$LlvmPath"
 
     # Showtime!
