@@ -42,6 +42,10 @@ jobs:
       - name: Check out the code
         uses: actions/checkout@v3
 
+      - name: Setup Ninja
+        if: build_tool == 'clang'
+        uses: ashutoshvarma/setup-ninja@master
+        
       - run: Get-PSDrive
 
       - name: Install `ninja` on Ubuntu
