@@ -43,7 +43,7 @@ jobs:
 
       - name: Setup Ninja
         if: env.build_tool == 'clang'
-        uses: ashutoshvarma/setup-ninja@master
+        uses: seanmiddleditch/gha-setup-ninja@master
         
       #- uses: msys2/setup-msys2@v2
       #  if: env.build_tool == 'clang'
