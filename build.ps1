@@ -1,6 +1,7 @@
 $LLVM_VERSION = $args[0]
 $LLVM_REPO_URL = $args[1]
 $LLVM_BUILD_TOOL = $args[2]
+$CMAKE_TYPE = $args[3]
 
 if ([string]::IsNullOrEmpty($LLVM_REPO_URL)) {
     $LLVM_REPO_URL = "https://github.com/llvm/llvm-project.git"
@@ -42,7 +43,7 @@ $CMAKE_ARGUMENTS = ""
 # Adjust cross compilation
 $CROSS_COMPILE = ""
 
-$SHARED_FLAGS = "-DCMAKE_BUILD_TYPE=MinSizeRel",
+$SHARED_FLAGS = "-DCMAKE_BUILD_TYPE=$CMAKE_TYPE",
   "-DCMAKE_INSTALL_PREFIX=destdir",
   "-DLLVM_ENABLE_PROJECTS=`"clang;lld;clang-tools-extra;polly`"",
   "-DLLVM_ENABLE_TERMINFO=OFF",
@@ -75,21 +76,13 @@ if ($LLVM_BUILD_TOOL -eq "vs") {
     # > be prepended with some other prefix.
     cmake --install . --strip --config Release
 } elseif ($LLVM_BUILD_TOOL -eq "clang") {
-    $env:PATH = ("C:\msys64\bin",
-        "C:\msys64\$env:MSYSTEM\bin",
-        "C:\msys64\usr\local\bin",
-        "C:\msys64\usr\bin",
-        "C:\msys64\mingw64\bin",
-        "C:\msys64\mingw32\bin",
-        "$env:PATH") -join ","
- 
-    C:\Windows\system32\cmd.exe /D /S /C D:\a\_temp\setup-msys2\msys2.cmd cmake `
+    cmake `
       -G Ninja `
       @SHARED_FLAGS `
       "$(cygpath -u $LlvmPath)"
 
     # Showtime!
-    C:\Windows\system32\cmd.exe /D /S /C D:\a\_temp\setup-msys2\msys2.cmd cmake --build . --config MinSizeRel
+    cmake --build . --config MinSizeRel
 
-    C:\Windows\system32\cmd.exe /D /S /C D:\a\_temp\setup-msys2\msys2.cmd cmake --install . --strip --config MinSizeRel
+    cmake --install . --strip --config MinSizeRel
 }
