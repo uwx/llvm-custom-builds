@@ -20,15 +20,11 @@ jobs:
             # adds an additional copy per link, but it reliably works and
             # the additional size is not too large on Windows.
             tar_extra_args: '--dereference'
-        sys:
-          - vs
-          - mingw64
-          - mingw32
-          - ucrt64
-          - clang64
+        build_tool: ['clang']
         id: ['windows-amd64']
-        llvm_version: ['llvmorg-18-init', 'main', 'llvmorg-18-init-4631-gd50b56d1']
+        llvm_version: ['llvmorg-18-init-4631-gd50b56d1']
         llvm_repo_url: ['https://github.com/llvm/llvm-project.git']
+        cmake_build_type: ['Release', 'MinSizeRel']
     env:
       build_tool: ${{ matrix.sys == 'vs' && 'vs' || 'clang' }}
     runs-on: ${{ matrix.os }}
@@ -36,17 +32,25 @@ jobs:
     steps:
       - name: Check out the code
         uses: actions/checkout@v3
-
-      #- name: Setup Ninja
-      #  if: matrix.build_tool == 'clang'
-      #  uses: ashutoshvarma/setup-ninja@master
         
-      - uses: msys2/setup-msys2@v2
+      - name: Install LLVM and Clang
         if: env.build_tool == 'clang'
+        uses: KyleMayes/install-llvm-action@master
         with:
-          msystem: ${{matrix.sys}}
-          pacboy: 'openssl llvm clang lld polly:p ninja make cmake libffi pkg-config python mingw-w64-x86_64-polly:'
-          release: false
+          version: 16
+          cached: false
+          env: true
+
+      - name: Setup Ninja
+        if: env.build_tool == 'clang'
+        uses: ashutoshvarma/setup-ninja@master
+        
+      #- uses: msys2/setup-msys2@v2
+      #  if: env.build_tool == 'clang'
+      #  with:
+      #    msystem: ${{matrix.sys}}
+      #    pacboy: 'openssl llvm clang lld polly:p ninja make cmake libffi pkg-config python mingw-w64-x86_64-polly:'
+      #    release: false
 
       - run: Get-PSDrive
 
@@ -104,7 +108,7 @@ jobs:
         shell: |
           powershell -Command "& '{0}'"
         run: |
-          ./build.ps1 ${{ matrix.llvm_version }} ${{ matrix.llvm_repo_url }} ${{ env.build_tool }}
+          ./build.ps1 ${{ matrix.llvm_version }} ${{ matrix.llvm_repo_url }} ${{ matrix.build_tool }} ${{ matrix.cmake_build_type }}
 
       - name: Inspect
         shell: bash
