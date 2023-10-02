@@ -79,7 +79,7 @@ if ($LLVM_BUILD_TOOL -eq "vs") {
     cmake `
       -G Ninja `
       @SHARED_FLAGS `
-      -DLLVM_HOST_TRIPLE=x86_64
+      -DLLVM_HOST_TRIPLE=x86_64 `
       "$LlvmPath"
 
     # Showtime!
