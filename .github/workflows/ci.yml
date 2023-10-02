@@ -22,7 +22,7 @@ jobs:
             tar_extra_args: '--dereference'
         build_tool: ['clang']
         id: ['windows-amd64']
-        llvm_version: ['llvmorg-18-init-4631-gd50b56d1']
+        llvm_version: ['main'] # llvmorg-18-init-4631-gd50b56d1
         llvm_repo_url: ['https://github.com/llvm/llvm-project.git']
         cmake_build_type: ['Release', 'MinSizeRel']
     env:
