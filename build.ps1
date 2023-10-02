@@ -79,7 +79,7 @@ if ($LLVM_BUILD_TOOL -eq "vs") {
     cmake `
       -G Ninja `
       @SHARED_FLAGS `
-      "$(cygpath -u $LlvmPath)"
+      "$LlvmPath"
 
     # Showtime!
     cmake --build . --config MinSizeRel
