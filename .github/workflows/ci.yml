@@ -22,7 +22,7 @@ jobs:
             tar_extra_args: '--dereference'
         build_tool: ['clang']
         id: ['windows-amd64']
-        llvm_version: ['main'] # llvmorg-18-init-4631-gd50b56d1
+        llvm_version: ['main', 'llvmorg-18-init-4631-gd50b56d1']
         llvm_repo_url: ['https://github.com/llvm/llvm-project.git']
         cmake_build_type: ['Release', 'MinSizeRel']
     env:
@@ -105,28 +105,35 @@ jobs:
 
       - name: Build (Windows)
         if: matrix.id == 'windows-amd64'
-        shell: |
-          powershell -Command "& '{0}'"
+        shell: pwsh
         run: |
           ./build.ps1 ${{ matrix.llvm_version }} ${{ matrix.llvm_repo_url }} ${{ matrix.build_tool }} ${{ matrix.cmake_build_type }}
 
-      - name: Inspect
+      - name: Inspect (non-Windows)
         shell: bash
+        if: matrix.id != 'windows-amd64'
         run: |
           PATH=llvm-project/build/destdir/bin:llvm-project/build/destdir/usr/bin:$PATH llvm-config --version
           PATH=llvm-project/build/destdir/bin:llvm-project/build/destdir/usr/bin:$PATH clang --version
+
+      - name: Inspect (Windows)
+        shell: bash
+        if: matrix.id == 'windows-amd64'
+        run: |
+          $env:PATH = "C:\llvm-project\build\destdir\bin;C:\llvm-project\build\destdir\usr\bin;$env:PATH"
+          llvm-config --version
+          clang --version
 
       - name: Zip
         shell: pwsh
         run: |
           mkdir dist
-          tar --directory C:/llvm-project/build/destdir --create --xz --verbose ${{ matrix.tar_extra_args }} --file C:/llvm-project/dist/llvm.tar.xz .
-          #ls -lh C:/llvm-project/dist/llvm.tar.xz
+          7z a C:/llvm-project/dist/llvm.7z C:/llvm-project/build/destdir/*
 
       - name: Upload Artifacts
         uses: actions/upload-artifact@v3
         with:
-          name: ${{ matrix.id }}-${{ matrix.llvm_version }}
+          name: ${{ matrix.id }}-${{ matrix.llvm_version }}-${{ matrix.cmake_build_type }}
           path: C:/llvm-project/dist
           if-no-files-found: error
           retention-days: 1
@@ -144,7 +151,8 @@ jobs:
 
     strategy:
       matrix:
-        llvm_version: ['llvmorg-18-init', 'main', 'llvmorg-18-init-4631-gd50b56d1']
+        llvm_version: ['main', 'llvmorg-18-init-4631-gd50b56d1']
+        cmake_build_type: ['Release', 'MinSizeRel']
 
     steps:
       - name: Download the Artifacts
@@ -169,45 +177,45 @@ jobs:
           draft: false
           prerelease: false
 
-      - name: Upload Release Asset Linux
-        uses: actions/upload-release-asset@v1
-        env:
-          GITHUB_TOKEN: ${{ github.token }}
-        with:
-          upload_url: ${{ steps.create_release.outputs.upload_url }}
-          asset_path: artifacts/linux-amd64-${{matrix.llvm_version}}/llvm.tar.xz
-          asset_name: llvm-linux-amd64.tar.xz
-          asset_content_type: application/gzip
-
-      - name: Upload Release Asset Linux (ARM64)
-        uses: actions/upload-release-asset@v1
-        env:
-          GITHUB_TOKEN: ${{ github.token }}
-        with:
-          upload_url: ${{ steps.create_release.outputs.upload_url }}
-          asset_path: artifacts/linux-aarch64-${{matrix.llvm_version}}/llvm.tar.xz
-          asset_name: linux-aarch64.tar.xz
-          asset_content_type: application/gzip
-
-      - name: Upload Release Asset Linux (RISCV64)
-        uses: actions/upload-release-asset@v1
-        env:
-          GITHUB_TOKEN: ${{ github.token }}
-        with:
-          upload_url: ${{ steps.create_release.outputs.upload_url }}
-          asset_path: artifacts/linux-riscv64-${{matrix.llvm_version}}/llvm.tar.xz
-          asset_name: linux-riscv64.tar.xz
-          asset_content_type: application/gzip
-
-      - name: Upload Release Asset Darwin
-        uses: actions/upload-release-asset@v1
-        env:
-          GITHUB_TOKEN: ${{ github.token }}
-        with:
-          upload_url: ${{ steps.create_release.outputs.upload_url }}
-          asset_path: artifacts/darwin-amd64-${{matrix.llvm_version}}/llvm.tar.xz
-          asset_name: llvm-darwin-amd64.tar.xz
-          asset_content_type: application/gzip
+      #- name: Upload Release Asset Linux
+      #  uses: actions/upload-release-asset@v1
+      #  env:
+      #    GITHUB_TOKEN: ${{ github.token }}
+      #  with:
+      #    upload_url: ${{ steps.create_release.outputs.upload_url }}
+      #    asset_path: artifacts/linux-amd64-${{matrix.llvm_version}}/llvm.tar.xz
+      #    asset_name: llvm-linux-amd64.tar.xz
+      #    asset_content_type: application/gzip
+	    #
+      #- name: Upload Release Asset Linux (ARM64)
+      #  uses: actions/upload-release-asset@v1
+      #  env:
+      #    GITHUB_TOKEN: ${{ github.token }}
+      #  with:
+      #    upload_url: ${{ steps.create_release.outputs.upload_url }}
+      #    asset_path: artifacts/linux-aarch64-${{matrix.llvm_version}}/llvm.tar.xz
+      #    asset_name: linux-aarch64.tar.xz
+      #    asset_content_type: application/gzip
+	    #
+      #- name: Upload Release Asset Linux (RISCV64)
+      #  uses: actions/upload-release-asset@v1
+      #  env:
+      #    GITHUB_TOKEN: ${{ github.token }}
+      #  with:
+      #    upload_url: ${{ steps.create_release.outputs.upload_url }}
+      #    asset_path: artifacts/linux-riscv64-${{matrix.llvm_version}}/llvm.tar.xz
+      #    asset_name: linux-riscv64.tar.xz
+      #    asset_content_type: application/gzip
+	    #
+      #- name: Upload Release Asset Darwin
+      #  uses: actions/upload-release-asset@v1
+      #  env:
+      #    GITHUB_TOKEN: ${{ github.token }}
+      #  with:
+      #    upload_url: ${{ steps.create_release.outputs.upload_url }}
+      #    asset_path: artifacts/darwin-amd64-${{matrix.llvm_version}}/llvm.tar.xz
+      #    asset_name: llvm-darwin-amd64.tar.xz
+      #    asset_content_type: application/gzip
 
       - name: Upload Release Asset Windows
         uses: actions/upload-release-asset@v1
@@ -215,6 +223,16 @@ jobs:
           GITHUB_TOKEN: ${{ github.token }}
         with:
           upload_url: ${{ steps.create_release.outputs.upload_url }}
-          asset_path: artifacts/windows-amd64-${{matrix.llvm_version}}/llvm.tar.xz
-          asset_name: llvm-windows-amd64.tar.xz
-          asset_content_type: application/gzip
+          asset_path: artifacts/windows-amd64-${{matrix.llvm_version}}-Release/llvm.7z
+          asset_name: llvm-windows-amd64-Release.7z
+          asset_content_type: application/x-7z-compressed
+
+      - name: Upload Release Asset Windows
+        uses: actions/upload-release-asset@v1
+        env:
+          GITHUB_TOKEN: ${{ github.token }}
+        with:
+          upload_url: ${{ steps.create_release.outputs.upload_url }}
+          asset_path: artifacts/windows-amd64-${{matrix.llvm_version}}-MinSizeRel/llvm.7z
+          asset_name: llvm-windows-amd64-MinSizeRel.7z
+          asset_content_type: application/x-7z-compressed
