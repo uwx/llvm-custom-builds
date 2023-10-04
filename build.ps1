@@ -43,17 +43,19 @@ $CMAKE_ARGUMENTS = ""
 # Adjust cross compilation
 $CROSS_COMPILE = ""
 
+pip install pygments pygments.lexers.c_cpp yaml
+
 $SHARED_FLAGS = "-DCMAKE_BUILD_TYPE=$CMAKE_TYPE",
   "-DCMAKE_INSTALL_PREFIX=destdir",
   "-DLLVM_ENABLE_PROJECTS=`"clang;lld;clang-tools-extra;polly`"",
-  "-DLLVM_ENABLE_TERMINFO=OFF",
-  "-DLLVM_ENABLE_ZLIB=OFF",
+  # "-DLLVM_ENABLE_TERMINFO=OFF",
+  # "-DLLVM_ENABLE_ZLIB=OFF",
   "-DLLVM_INCLUDE_DOCS=OFF",
   "-DLLVM_INCLUDE_EXAMPLES=OFF",
   "-DLLVM_INCLUDE_GO_TESTS=OFF",
   "-DLLVM_INCLUDE_TESTS=OFF",
   "-DLLVM_INCLUDE_TOOLS=ON",
-  "-DLLVM_INCLUDE_UTILS=OFF",
+  "-DLLVM_INCLUDE_UTILS=ON",
   "-DLLVM_OPTIMIZED_TABLEGEN=ON",
   "-DLLVM_TARGETS_TO_BUILD=`"X86;AArch64;RISCV;WebAssembly`"",
   "$CROSS_COMPILE",
@@ -81,6 +83,14 @@ if ($LLVM_BUILD_TOOL -eq "vs") {
       @SHARED_FLAGS `
       -DLLVM_HOST_TRIPLE=x86_64 `
       "$LlvmPath"
+
+    # cmake --build . --config Release --target ALL_BUILD
+    # cmake --build . --config Release --target INSTALL
+
+    # Showtime!
+    #cmake --build . --config MinSizeRel --target ALL_BUILD
+
+    #cmake --build . --strip --config MinSizeRel --target INSTALL
 
     # Showtime!
     cmake --build . --config MinSizeRel
