@@ -43,7 +43,7 @@ $CMAKE_ARGUMENTS = ""
 # Adjust cross compilation
 $CROSS_COMPILE = ""
 
-pip install pygments yaml
+# pip install pygments yaml
 
 $SHARED_FLAGS = "-DCMAKE_BUILD_TYPE=$CMAKE_TYPE",
   "-DCMAKE_INSTALL_PREFIX=destdir",
@@ -92,7 +92,6 @@ if ($LLVM_BUILD_TOOL -eq "vs") {
     -G Ninja `
     @SHARED_FLAGS `
     -DLLVM_HOST_TRIPLE=x86_64 `
-    -DLLVM_ENABLE_MODULES=ON `
     -DCMAKE_LINKER="C:\Program Files\LLVM\lld.exe" `
     "$LlvmPath"
 

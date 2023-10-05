@@ -28,6 +28,13 @@ jobs:
           - { build_tool: mingw32, sys: mingw32, msys2: 'true' }
           - { build_tool: mingw-ucrt64, sys: ucrt64, msys2: 'true' }
           - { build_tool: mingw-clang64, sys: clang64, msys2: 'true' }
+        exclude: # only Clang supports ThinLTO
+          - lto: Thin
+            build_tool: mingw64
+          - lto: Thin
+            build_tool: mingw32
+          - lto: Thin
+            build_tool: ucrt64
         build_tool: [clang, vs, mingw64, mingw32, mingw-ucrt64, mingw-clang64]
         id: ['windows-amd64']
         llvm_version: ['main', 'llvmorg-18-init-4631-gd50b56d1']
@@ -58,7 +65,7 @@ jobs:
         with:
           msystem: ${{matrix.sys}}
           pacboy: |
-            openssl llvm clang lld polly:p ninja make cmake libffi pkg-config python mingw-w64-x86_64-polly:
+            openssl llvm clang lld polly:p ninja make cmake libffi pkg-config python polly
           # pacboy: 'openssl llvm clang lld polly:p ninja make cmake libffi pkg-config python mingw-w64-x86_64-polly:'
 
       - name: Setup Ninja
