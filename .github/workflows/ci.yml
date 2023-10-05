@@ -45,23 +45,17 @@ jobs:
       mimalloc_artifact_name: ${{ needs.build-mimalloc.outputs.artifact }}
       project_location: ${{ startsWith(matrix.id, 'windows-') && 'C:\llvm-project' || 'llvm-project' }}
       SEVENZ_FILE_PATH: fixme pls
+      RELEASE_TAG: fixme pls
     runs-on: ${{ matrix.os }}
 
     steps:
+      - uses: ./.github/actions/setup-psoolkit
+
       - name: Check out the code
         uses: actions/checkout@v3
 
-      - name: Install LLVM and Clang
-        if: matrix.build_tool == 'clang'
-        uses: KyleMayes/install-llvm-action@master
-        with:
-          version: '17.0.2'
-          force-version: true
-          cached: false
-          env: true
-
       - uses: msys2/setup-msys2@v2
-        if: matrix.msys2 == 'true'
+        if: startsWith(matrix.id, 'windows-') && matrix.msys2 == 'true'
         with:
           update: true
           msystem: ${{matrix.sys}}
@@ -69,14 +63,10 @@ jobs:
             openssl llvm clang lld polly:p ninja make cmake libffi pkg-config python polly
           # pacboy: 'openssl llvm clang lld polly:p ninja make cmake libffi pkg-config python mingw-w64-x86_64-polly:'
 
-      - name: Setup Ninja
-        if: matrix.build_tool == 'clang'
-        uses: seanmiddleditch/gha-setup-ninja@master
-
       - run: Get-PSDrive
 
       - name: Download static mimalloc
-        if: matrix.id == 'windows-amd64'
+        if: startsWith(matrix.id, 'windows-')
         uses: actions/download-artifact@v2
         with:
           name: ${{ env.mimalloc_artifact_name }}
@@ -95,6 +85,25 @@ jobs:
         run: |
           sudo apt-get install ninja-build -y
 
+      - name: Install `ninja` on macOS
+        if: startsWith(matrix.id, 'darwin-')
+        shell: bash
+        run: |
+          brew install ninja
+
+      - name: Install `ninja` on Windows
+        if: startsWith(matrix.id, 'windows-') && matrix.build_tool == 'clang'
+        uses: seanmiddleditch/gha-setup-ninja@master
+
+      - name: Install LLVM and Clang on Windows
+        if: startsWith(matrix.id, 'windows-') && matrix.build_tool == 'clang'
+        uses: KyleMayes/install-llvm-action@master
+        with:
+          version: '17.0.2'
+          force-version: true
+          cached: false
+          env: true
+
       - name: Install cross-compilation tools
         if: matrix.id == 'linux-aarch64'
         shell: bash
@@ -107,42 +116,29 @@ jobs:
         run: |
           sudo apt-get install gcc-12-riscv64-linux-gnu g++-12-riscv64-linux-gnu gcc-12-multilib binutils-riscv64-linux-gnu libgcc-12-dev-riscv64-cross libstdc++6-riscv64-cross -y
 
-      - name: Install `ninja` on macOS
-        if: startsWith(matrix.id, 'darwin-')
-        shell: bash
-        run: |
-          brew install ninja
-
-      # TODO(jubianchi): Re-enable this to build on MingW
-      # - name: Install `ninja` on Windows
-      #   if: startsWith(matrix.id, 'windows-')
-      #   shell: bash
-      #   run: |
-      #     choco install ninja
-
       - name: Build
         if: matrix.id != 'windows-amd64' && matrix.id != 'linux-aarch64' && matrix.id != 'linux-riscv64'
         shell: bash
         run: |
-          ./build.sh ${{ matrix.llvm_version }} ${{ matrix.llvm_repo_url }}
+          ./build.sh "${{ matrix.llvm_version }}" "${{ matrix.llvm_repo_url }}"
 
       - name: Build (linux-aarch64)
         if: matrix.id == 'linux-aarch64'
         shell: bash
         run: |
-          ./build.sh ${{ matrix.llvm_version }} ${{ matrix.llvm_repo_url }} aarch64
+          ./build.sh "${{ matrix.llvm_version }}" "${{ matrix.llvm_repo_url }}" aarch64
 
       - name: Build (linux-aarch64)
         if: matrix.id == 'linux-riscv64'
         shell: bash
         run: |
-          ./build.sh ${{ matrix.llvm_version }} ${{ matrix.llvm_repo_url }} riscv64
+          ./build.sh "${{ matrix.llvm_version }}" "${{ matrix.llvm_repo_url }}" riscv64
 
       - name: Build (Windows)
         if: matrix.id == 'windows-amd64'
         shell: pwsh
         run: |
-          ./build.ps1 ${{ matrix.llvm_version }} ${{ matrix.llvm_repo_url }} ${{ matrix.build_tool }} ${{ matrix.cmake_build_type }} ${{ matrix.lto }} ${{ env.project_location }}
+          ./build.ps1 "${{ matrix.llvm_version }}" "${{ matrix.llvm_repo_url }}" "${{ matrix.build_tool }}" "${{ matrix.cmake_build_type }}" "${{ matrix.lto }}" "${{ env.project_location }}"
 
       - name: Inspect (non-Windows)
         shell: bash
@@ -157,16 +153,16 @@ jobs:
         if: |
           startsWith(matrix.id, 'windows-')
         run: |
-          $env:PATH = "${{ env.project_location }}\build\destdir\bin;${{ env.project_location }}\build\destdir\usr\bin;$env:PATH"
+          $env:PATH = "$env:PROJECT_LOCATION\build\destdir\bin;$env:PROJECT_LOCATION\build\destdir\usr\bin;$env:PATH"
           llvm-config --version
           clang --version
 
       - name: Zip
         shell: pwsh
         run: |
-          $SEVENZ_FILE_PATH = "${{ env.project_location }}/${{ matrix.id }}-${{ matrix.llvm_version }}-${{ matrix.build_tool }}-${{ matrix.cmake_build_type }}-${{ matrix.lto }}.7z"
-          echo "SEVENZ_FILE_PATH=$SEVENZ_FILE_PATH" | Out-File -FilePath $env:GITHUB_ENV -Encoding utf8 -Append
-          7z a "$SEVENZ_FILE_PATH" "${{ env.project_location }}/build/destdir/*"
+          Set-GitHubActionsEnv SEVENZ_FILE_PATH "${{ env.project_location }}/${{ matrix.id }}-${{ matrix.llvm_version }}-${{ matrix.build_tool }}-${{ matrix.cmake_build_type }}-${{ matrix.lto }}.7z"
+
+          7z a "$env:SEVENZ_FILE_PATH" "$env:PROJECT_LOCATION/build/destdir/*"
 
       #- name: Upload Artifacts
       #  uses: actions/upload-artifact@v3
@@ -176,10 +172,18 @@ jobs:
       #    if-no-files-found: error
       #    retention-days: 9
 
+      - name: Tag published version
+        shell: pwsh
+        run: |
+          Set-GitHubActionsEnv RELEASE_TAG "${{ matrix.llvm_version }}"
+
+          git tag -a "$env:RELEASE_TAG" -m "Published version $env:RELEASE_TAG" $env:GITHUB_SHA
+          git push origin $env:RELEASE_TAG
+
       - name: Release
         uses: softprops/action-gh-release@v1
         with:
-          #tag: ${{ matrix.llvm_version }}
+          tag: ${{ env.RELEASE_TAG }}
           #name: Release ${{ matrix.llvm_version }}
           draft: false
           prerelease: false
