@@ -4,8 +4,12 @@ on: [push]
 
 
 jobs:
+  build-mimalloc:
+    uses: ./.github/workflows/mimalloc.yml
+
   build:
     name: Build
+    needs: build-mimalloc
 
     strategy:
       fail-fast: false
@@ -20,53 +24,72 @@ jobs:
             # adds an additional copy per link, but it reliably works and
             # the additional size is not too large on Windows.
             tar_extra_args: '--dereference'
-        build_tool: ['clang']
+        build_tool: [clang, vs, mingw64, mingw32, mingw-ucrt64, mingw-clang64]
         id: ['windows-amd64']
         llvm_version: ['main', 'llvmorg-18-init-4631-gd50b56d1']
         llvm_repo_url: ['https://github.com/llvm/llvm-project.git']
         cmake_build_type: ['Release', 'MinSizeRel']
+        sys: [vs, mingw64, mingw32, ucrt64, clang64]
+        lto: ['Off', 'Thin', 'Full']
     env:
-      build_tool: ${{ matrix.sys == 'vs' && 'vs' || 'clang' }}
+      mimalloc_artifact_name: ${{ needs.build-mimalloc.outputs.artifact }}
+      msys2: ${{ startsWith(matrix.build_tool, 'mingw') }}
+      project_location: ${{ startsWith(matrix.id, 'windows-') && 'C:\llvm-project' || 'llvm-project' }}
     runs-on: ${{ matrix.os }}
 
     steps:
       - name: Check out the code
         uses: actions/checkout@v3
-        
+
       - name: Install LLVM and Clang
-        if: env.build_tool == 'clang'
+        if: matrix.build_tool == 'clang'
         uses: KyleMayes/install-llvm-action@master
         with:
           version: 16
           cached: false
           env: true
 
+      - uses: msys2/setup-msys2@v2
+        if: env.msys2 == 'true'
+        with:
+          msystem: ${{matrix.sys}}
+          pacboy: |
+            openssl llvm clang lld polly:p ninja make cmake libffi libunwind pkg-config python python-sphinx z3 mingw-w64-x86_64-polly:
+          # pacboy: 'openssl llvm clang lld polly:p ninja make cmake libffi pkg-config python mingw-w64-x86_64-polly:'
+
       - name: Setup Ninja
-        if: env.build_tool == 'clang'
+        if: matrix.build_tool == 'clang'
         uses: seanmiddleditch/gha-setup-ninja@master
-        
-      #- uses: msys2/setup-msys2@v2
-      #  if: env.build_tool == 'clang'
-      #  with:
-      #    msystem: ${{matrix.sys}}
-      #    pacboy: 'openssl llvm clang lld polly:p ninja make cmake libffi pkg-config python mingw-w64-x86_64-polly:'
-      #    release: false
 
       - run: Get-PSDrive
+
+      - name: Download static mimalloc
+        if: matrix.id == 'windows-amd64'
+        uses: actions/download-artifact@v2
+        with:
+          name: ${{ env.mimalloc_artifact_name }}
+          path: C:/mimalloc.lib
+
+      - name: Setup ccache
+        uses: hendrikmuhs/ccache-action@v1.2
+        with:
+          max-size: 512M
+          key: sccache
+          variant: sccache
 
       - name: Install `ninja` on Ubuntu
         if: startsWith(matrix.id, 'linux-')
         shell: bash
         run: |
           sudo apt-get install ninja-build -y
-      
-      - name: Install cross-compilatio tools
+
+      - name: Install cross-compilation tools
         if: matrix.id == 'linux-aarch64'
         shell: bash
         run: |
           sudo apt-get install gcc-12-aarch64-linux-gnu g++-12-aarch64-linux-gnu gcc-12-multilib binutils-aarch64-linux-gnu libgcc-12-dev-arm64-cross libstdc++6-arm64-cross -y
 
-      - name: Install cross-compilatio tools
+      - name: Install cross-compilation tools
         if: matrix.id == 'linux-riscv64'
         shell: bash
         run: |
@@ -107,20 +130,22 @@ jobs:
         if: matrix.id == 'windows-amd64'
         shell: pwsh
         run: |
-          ./build.ps1 ${{ matrix.llvm_version }} ${{ matrix.llvm_repo_url }} ${{ matrix.build_tool }} ${{ matrix.cmake_build_type }}
+          ./build.ps1 ${{ matrix.llvm_version }} ${{ matrix.llvm_repo_url }} ${{ matrix.build_tool }} ${{ matrix.cmake_build_type }} ${{ matrix.lto }} ${{ env.project_location }}
 
       - name: Inspect (non-Windows)
         shell: bash
-        if: matrix.id != 'windows-amd64'
+        if: |
+          !startsWith(matrix.id, 'windows-')
         run: |
           PATH=llvm-project/build/destdir/bin:llvm-project/build/destdir/usr/bin:$PATH llvm-config --version
           PATH=llvm-project/build/destdir/bin:llvm-project/build/destdir/usr/bin:$PATH clang --version
 
       - name: Inspect (Windows)
         shell: bash
-        if: matrix.id == 'windows-amd64'
+        if: |
+          startsWith(matrix.id, 'windows-')
         run: |
-          $env:PATH = "C:\llvm-project\build\destdir\bin;C:\llvm-project\build\destdir\usr\bin;$env:PATH"
+          $env:PATH = "${{ env.project_location }}\build\destdir\bin;${{ env.project_location }}\build\destdir\usr\bin;$env:PATH"
           llvm-config --version
           clang --version
 
@@ -128,13 +153,13 @@ jobs:
         shell: pwsh
         run: |
           mkdir dist
-          7z a C:/llvm-project/dist/llvm.7z C:/llvm-project/build/destdir/*
+          7z a ${{ env.project_location }}/dist/llvm.7z ${{ env.project_location }}/build/destdir/*
 
       - name: Upload Artifacts
         uses: actions/upload-artifact@v3
         with:
           name: ${{ matrix.id }}-${{ matrix.llvm_version }}-${{ matrix.cmake_build_type }}
-          path: C:/llvm-project/dist
+          path: ${{ env.project_location }}/dist
           if-no-files-found: error
           retention-days: 1
 
@@ -149,13 +174,13 @@ jobs:
     permissions:
       contents: write
 
-    strategy:
-      matrix:
-        llvm_version: ['main', 'llvmorg-18-init-4631-gd50b56d1']
-        cmake_build_type: ['Release', 'MinSizeRel']
+    #strategy:
+      #fail-fast: false
+      #matrix:
+      #  llvm_version: ['main', 'llvmorg-18-init-4631-gd50b56d1']
 
     steps:
-      - name: Download the Artifacts
+      - name: Download artifacts
         uses: actions/download-artifact@v3
         with:
           path: artifacts
@@ -165,74 +190,18 @@ jobs:
         run: |
           ls -laGiR ./*
 
-      - name: Create Release
-        id: create_release
-        uses: ncipollo/release-action@v1
-        env:
-          GITHUB_TOKEN: ${{ github.token }}
+      - name: Rename artifacts
+        shell: pwsh
+        run: |
+          Get-ChildItem -Recurse -Path ./artifacts | where { ! $_.PSIsContainer } | ForEach-Object { Move-Item -Path $_ -Destination $($_.FullName -replace 'artifacts[\\/](?<id>.*?)-(?<version>.*?)-(?<buildType>.*?)[\\/]llvm.7z','artifacts/${id}-${version}-${buildType}.7z') }
+
+      - name: Release
+        uses: softprops/action-gh-release@v1
         with:
-          tag: ${{ matrix.llvm_version }}
-          name: Release ${{ matrix.llvm_version }}
-          allowUpdates: true
+          token: ${{ github.token }}
+          #tag: ${{ matrix.llvm_version }}
+          #name: Release ${{ matrix.llvm_version }}
           draft: false
           prerelease: false
-
-      #- name: Upload Release Asset Linux
-      #  uses: actions/upload-release-asset@v1
-      #  env:
-      #    GITHUB_TOKEN: ${{ github.token }}
-      #  with:
-      #    upload_url: ${{ steps.create_release.outputs.upload_url }}
-      #    asset_path: artifacts/linux-amd64-${{matrix.llvm_version}}/llvm.tar.xz
-      #    asset_name: llvm-linux-amd64.tar.xz
-      #    asset_content_type: application/gzip
-      #
-      #- name: Upload Release Asset Linux (ARM64)
-      #  uses: actions/upload-release-asset@v1
-      #  env:
-      #    GITHUB_TOKEN: ${{ github.token }}
-      #  with:
-      #    upload_url: ${{ steps.create_release.outputs.upload_url }}
-      #    asset_path: artifacts/linux-aarch64-${{matrix.llvm_version}}/llvm.tar.xz
-      #    asset_name: linux-aarch64.tar.xz
-      #    asset_content_type: application/gzip
-      #
-      #- name: Upload Release Asset Linux (RISCV64)
-      #  uses: actions/upload-release-asset@v1
-      #  env:
-      #    GITHUB_TOKEN: ${{ github.token }}
-      #  with:
-      #    upload_url: ${{ steps.create_release.outputs.upload_url }}
-      #    asset_path: artifacts/linux-riscv64-${{matrix.llvm_version}}/llvm.tar.xz
-      #    asset_name: linux-riscv64.tar.xz
-      #    asset_content_type: application/gzip
-      #
-      #- name: Upload Release Asset Darwin
-      #  uses: actions/upload-release-asset@v1
-      #  env:
-      #    GITHUB_TOKEN: ${{ github.token }}
-      #  with:
-      #    upload_url: ${{ steps.create_release.outputs.upload_url }}
-      #    asset_path: artifacts/darwin-amd64-${{matrix.llvm_version}}/llvm.tar.xz
-      #    asset_name: llvm-darwin-amd64.tar.xz
-      #    asset_content_type: application/gzip
-
-      - name: Upload Release Asset Windows
-        uses: actions/upload-release-asset@v1
-        env:
-          GITHUB_TOKEN: ${{ github.token }}
-        with:
-          upload_url: ${{ steps.create_release.outputs.upload_url }}
-          asset_path: artifacts/windows-amd64-${{matrix.llvm_version}}-Release/llvm.7z
-          asset_name: llvm-windows-amd64-Release.7z
-          asset_content_type: application/x-7z-compressed
-
-      - name: Upload Release Asset Windows
-        uses: actions/upload-release-asset@v1
-        env:
-          GITHUB_TOKEN: ${{ github.token }}
-        with:
-          upload_url: ${{ steps.create_release.outputs.upload_url }}
-          asset_path: artifacts/windows-amd64-${{matrix.llvm_version}}-MinSizeRel/llvm.7z
-          asset_name: llvm-windows-amd64-MinSizeRel.7z
-          asset_content_type: application/x-7z-compressed
+          files: |
+            artifacts/*.7z

@@ -2,26 +2,26 @@ $LLVM_VERSION = $args[0]
 $LLVM_REPO_URL = $args[1]
 $LLVM_BUILD_TOOL = $args[2]
 $CMAKE_TYPE = $args[3]
+$LTO = $args[4]
+$PROJECT_LOCATION = $args[5]
 
 if ([string]::IsNullOrEmpty($LLVM_REPO_URL)) {
-    $LLVM_REPO_URL = "https://github.com/llvm/llvm-project.git"
+  $LLVM_REPO_URL = "https://github.com/llvm/llvm-project.git"
 }
 
 if ([string]::IsNullOrEmpty($LLVM_VERSION)) {
-    Write-Output "Usage: $PSCommandPath <llvm-version> <llvm-repository-url>"
-    Write-Output ""
-    Write-Output "# Arguments"
-    Write-Output "  llvm-version         The name of a LLVM release branch without the 'release/' prefix"
-    Write-Output "  llvm-repository-url  The URL used to clone LLVM sources (default: https://github.com/llvm/llvm-project.git)"
+  Write-Output "Usage: $PSCommandPath <llvm-version> <llvm-repository-url>"
+  Write-Output ""
+  Write-Output "# Arguments"
+  Write-Output "  llvm-version         The name of a LLVM release branch without the 'release/' prefix"
+  Write-Output "  llvm-repository-url  The URL used to clone LLVM sources (default: https://github.com/llvm/llvm-project.git)"
 
-    exit 1
+  exit 1
 }
-
-$PROJECT_LOCATION = "C:\llvm-project"
 
 # Clone the LLVM project.
 if (-not (Test-Path -Path "llvm-project" -PathType Container)) {
-    git clone "$LLVM_REPO_URL" "$PROJECT_LOCATION"
+  git clone "$LLVM_REPO_URL" "$PROJECT_LOCATION"
 }
 
 Set-Location "$PROJECT_LOCATION"
@@ -51,6 +51,7 @@ $SHARED_FLAGS = "-DCMAKE_BUILD_TYPE=$CMAKE_TYPE",
   # "-DLLVM_ENABLE_TERMINFO=OFF",
   # "-DLLVM_ENABLE_ZLIB=OFF",
   "-DLLVM_INCLUDE_DOCS=OFF",
+  "-DLLVM_INCLUDE_BENCHMARKS=OFF",
   "-DLLVM_INCLUDE_EXAMPLES=OFF",
   "-DLLVM_INCLUDE_GO_TESTS=OFF",
   "-DLLVM_INCLUDE_TESTS=OFF",
@@ -58,42 +59,60 @@ $SHARED_FLAGS = "-DCMAKE_BUILD_TYPE=$CMAKE_TYPE",
   "-DLLVM_INCLUDE_UTILS=ON",
   "-DLLVM_OPTIMIZED_TABLEGEN=ON",
   "-DLLVM_TARGETS_TO_BUILD=`"X86;AArch64;RISCV;WebAssembly`"",
+  # enable LTO if desired
+  "-DLLVM_ENABLE_LTO=$LTO",
+  # Enable pedantic mode. This disables compiler-specific extensions, if possible. Defaults to ON.
+  "-DLLVM_ENABLE_PEDANTIC=OFF",
+  # compile with cmake header modules (might speed up build)
+  "-DLLVM_ENABLE_MODULES=ON",
+
+  # enable sccache
+  "-DCMAKE_C_COMPILER_LAUNCHER=sccache",
+  "-DCMAKE_CXX_COMPILER_LAUNCHER=sccache",
+
   "$CROSS_COMPILE",
   "$CMAKE_ARGUMENTS"
 
 if ($LLVM_BUILD_TOOL -eq "vs") {
-    # Run `cmake` to configure the project.
-    msys2 cmake `
-      -G "Visual Studio 17 2022" `
-      @SHARED_FLAGS `
-      "$LlvmPath"
-    
-    # Showtime!
-    cmake --build . --config Release
-    
-    # Not using DESTDIR here, quote from
-    # https://cmake.org/cmake/help/latest/envvar/DESTDIR.html
-    # > `DESTDIR` may not be used on Windows because installation prefix
-    # > usually contains a drive letter like in `C:/Program Files` which cannot
-    # > be prepended with some other prefix.
-    cmake --install . --strip --config Release
+  # Run `cmake` to configure the project.
+  msys2 cmake `
+    -G "Visual Studio 17 2022" `
+    @SHARED_FLAGS `
+    -DCMAKE_EXE_LINKER_FLAGS="-Wl,--push-state,C:/mimalloc.lib,--pop-state" `
+    "$LlvmPath"
+
+  # Showtime!
+  cmake --build . --config Release
+
+  # Not using DESTDIR here, quote from
+  # https://cmake.org/cmake/help/latest/envvar/DESTDIR.html
+  # > `DESTDIR` may not be used on Windows because installation prefix
+  # > usually contains a drive letter like in `C:/Program Files` which cannot
+  # > be prepended with some other prefix.
+  cmake --install . --strip --config Release
 } elseif ($LLVM_BUILD_TOOL -eq "clang") {
-    cmake `
-      -G Ninja `
-      @SHARED_FLAGS `
-      -DLLVM_HOST_TRIPLE=x86_64 `
-      "$LlvmPath"
+  cmake `
+    -G Ninja `
+    @SHARED_FLAGS `
+    -DLLVM_HOST_TRIPLE=x86_64 `
+    -DCMAKE_EXE_LINKER_FLAGS="-Wl,--push-state,C:/mimalloc.lib,--pop-state" `
+    "$LlvmPath"
 
-    # cmake --build . --config Release --target ALL_BUILD
-    # cmake --build . --config Release --target INSTALL
+  # Showtime!
+  cmake --build . --config MinSizeRel
 
-    # Showtime!
-    #cmake --build . --config MinSizeRel --target ALL_BUILD
+  cmake --install . --strip --config MinSizeRel
+} else {
+  $env:PATH = "$env:RUNNER_TEMP\msys64\bin;$env:RUNNER_TEMP\msys64\$env:MSYSTEM\bin;$env:RUNNER_TEMP\msys64\usr\bin;$env:RUNNER_TEMP\msys64\mingw64\bin;$env:RUNNER_TEMP\msys64\mingw32\bin;$env:PATH"
 
-    #cmake --build . --strip --config MinSizeRel --target INSTALL
+  cmake `
+    -G Ninja `
+    @SHARED_FLAGS `
+    -DLLVM_HOST_TRIPLE=x86_64 `
+    "$LlvmPath"
 
-    # Showtime!
-    cmake --build . --config MinSizeRel
+  # Showtime!
+  cmake --build . --config MinSizeRel
 
-    cmake --install . --strip --config MinSizeRel
+  cmake --install . --strip --config MinSizeRel
 }
