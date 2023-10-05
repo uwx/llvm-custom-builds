@@ -48,7 +48,8 @@ jobs:
         if: matrix.build_tool == 'clang'
         uses: KyleMayes/install-llvm-action@master
         with:
-          version: 16
+          version: '17.0.2'
+          force-version: true
           cached: false
           env: true
 
