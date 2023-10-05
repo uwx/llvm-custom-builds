@@ -82,6 +82,8 @@ if ($LLVM_BUILD_TOOL -eq "vs") {
   cmake `
     -G "Visual Studio 17 2022" `
     @SHARED_FLAGS `
+    -DLLVM_USE_LINKER=lld `
+    -DCMAKE_LINKER="C:\Program Files\LLVM\bin\lld-link.exe" `
     "$LlvmPath"
 
   # Showtime!
@@ -105,12 +107,11 @@ if ($LLVM_BUILD_TOOL -eq "vs") {
     $LTO_FLAGS = $LTO_FLAGS,"-DLLVM_PARALLEL_LINK_JOBS=1"
   }
 
-  # -DCMAKE_LINKER="C:\Program Files\LLVM\bin\lld-link.exe" `
-
   cmake `
     -G Ninja `
     @SHARED_FLAGS `
     -DLLVM_USE_LINKER=lld `
+    -DCMAKE_LINKER="C:\Program Files\LLVM\bin\lld-link.exe" `
     -DLLVM_HOST_TRIPLE=x86_64 `
     -DLLVM_POLLY_LINK_INTO_TOOLS=ON `
     @LTO_FLAGS `
@@ -127,6 +128,8 @@ if ($LLVM_BUILD_TOOL -eq "vs") {
     -G Ninja `
     @SHARED_FLAGS `
     -DLLVM_HOST_TRIPLE=x86_64 `
+    -DCMAKE_C_FLAGS="-D ffs=__builtin_ffs"
+    -DCMAKE_CXX_FLAGS="-D ffs=__builtin_ffs"
     "$LlvmPath"
 
   # Showtime!
