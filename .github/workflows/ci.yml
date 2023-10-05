@@ -77,7 +77,7 @@ jobs:
         uses: hendrikmuhs/ccache-action@v1.2
         with:
           max-size: 512M
-          key: sccache
+          key: ${{ matrix.id }}-${{ matrix.llvm_version }}-${{ matrix.build_tool }}-${{ matrix.cmake_build_type }}-${{ matrix.lto }}
           variant: sccache
 
       - name: Install `ninja` on Ubuntu
