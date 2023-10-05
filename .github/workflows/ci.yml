@@ -49,10 +49,10 @@ jobs:
     runs-on: ${{ matrix.os }}
 
     steps:
-      - uses: ./.github/actions/setup-psoolkit
-
       - name: Check out the code
         uses: actions/checkout@v3
+
+      - uses: ./.github/actions/setup-psoolkit
 
       - uses: msys2/setup-msys2@v2
         if: startsWith(matrix.id, 'windows-') && matrix.msys2 == 'true'
