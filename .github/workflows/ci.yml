@@ -177,34 +177,34 @@ jobs:
           files: |
             ${{ env.SEVENZ_FILE_PATH }}.7z
 
-  release:
-    name: Release
-
-    runs-on: ubuntu-latest
-    # if: startsWith(github.ref, 'refs/tags/')
-
-    needs: [build]
-
-    permissions:
-      contents: write
-
-    #strategy:
-      #fail-fast: false
-      #matrix:
-      #  llvm_version: ['main', 'llvmorg-18-init-4631-gd50b56d1']
-
-    steps:
-      - name: Download artifacts
-        uses: actions/download-artifact@v3
-        with:
-          path: artifacts
-
-      - name: Inspect
-        shell: bash
-        run: |
-          ls -laGiR ./*
-
-      - name: Rename artifacts
-        shell: pwsh
-        run: |
-          Get-ChildItem -Recurse -Path ./artifacts | where { ! $_.PSIsContainer } | ForEach-Object { Move-Item -Path $_ -Destination $($_.FullName -replace 'artifacts[\\/](?<id>.*?)-(?<version>.*?)-(?<buildType>.*?)[\\/]llvm.7z','artifacts/${id}-${version}-${buildType}.7z') }
+#  release:
+#    name: Release
+#
+#    runs-on: ubuntu-latest
+#    # if: startsWith(github.ref, 'refs/tags/')
+#
+#    needs: [build]
+#
+#    permissions:
+#      contents: write
+#
+#    #strategy:
+#      #fail-fast: false
+#      #matrix:
+#      #  llvm_version: ['main', 'llvmorg-18-init-4631-gd50b56d1']
+#
+#    steps:
+#      - name: Download artifacts
+#        uses: actions/download-artifact@v3
+#        with:
+#          path: artifacts
+#
+#      - name: Inspect
+#        shell: bash
+#        run: |
+#          ls -laGiR ./*
+#
+#      - name: Rename artifacts
+#        shell: pwsh
+#        run: |
+#          Get-ChildItem -Recurse -Path ./artifacts | where { ! $_.PSIsContainer } | ForEach-Object { Move-Item -Path $_ -Destination $($_.FullName -replace 'artifacts[\\/](?<id>.*?)-(?<version>.*?)-(?<buildType>.*?)[\\/]llvm.7z','artifacts/${id}-${version}-${buildType}.7z') }
