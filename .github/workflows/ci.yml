@@ -69,7 +69,7 @@ jobs:
       - if: matrix.build_tool == 'mingw-clang64'
         run: C:\Windows\system32\cmd.exe /D /S /C D:\a\_temp\setup-msys2\msys2.cmd -c pacman --noconfirm -Syu --overwrite mingw-w64-clang-x86_64-polly
 
-      - if: matrix.build_tool != 'mingw-ucrt64' && matrix.build_tool != 'mingw-clang64'
+      - if: matrix.build_tool != 'mingw-ucrt64' && matrix.build_tool != 'mingw-clang64' && matrix.msys2 == 'true'
         run: C:\Windows\system32\cmd.exe /D /S /C D:\a\_temp\setup-msys2\msys2.cmd -c pacboy --noconfirm -S --needed polly
 
       - run: Get-PSDrive
