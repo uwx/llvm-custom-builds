@@ -93,7 +93,7 @@ if ($LLVM_BUILD_TOOL -eq "vs") {
     @SHARED_FLAGS `
     -DLLVM_HOST_TRIPLE=x86_64 `
     -DLLVM_ENABLE_MODULES=ON `
-    -DCMAKE_LINKER="C:\Program Files\LLVM\lld.exe"
+    -DCMAKE_LINKER="C:\Program Files\LLVM\lld.exe" `
     "$LlvmPath"
 
   # Showtime!
