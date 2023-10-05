@@ -43,7 +43,7 @@ $CMAKE_ARGUMENTS = ""
 # Adjust cross compilation
 $CROSS_COMPILE = ""
 
-pip install pygments pygments.lexers.c_cpp yaml
+pip install pygments yaml
 
 $SHARED_FLAGS = "-DCMAKE_BUILD_TYPE=$CMAKE_TYPE",
   "-DCMAKE_INSTALL_PREFIX=destdir",
@@ -78,7 +78,6 @@ if ($LLVM_BUILD_TOOL -eq "vs") {
   msys2 cmake `
     -G "Visual Studio 17 2022" `
     @SHARED_FLAGS `
-    #-DCMAKE_EXE_LINKER_FLAGS="-Wl,--push-state,C:/mimalloc.lib,--pop-state" `
     "$LlvmPath"
 
   # Showtime!
@@ -95,7 +94,6 @@ if ($LLVM_BUILD_TOOL -eq "vs") {
     -G Ninja `
     @SHARED_FLAGS `
     -DLLVM_HOST_TRIPLE=x86_64 `
-    #-DCMAKE_EXE_LINKER_FLAGS="-Wl,--push-state,C:/mimalloc.lib,--pop-state" `
     "$LlvmPath"
 
   # Showtime!
