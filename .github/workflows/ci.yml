@@ -37,6 +37,7 @@ jobs:
     env:
       mimalloc_artifact_name: ${{ needs.build-mimalloc.outputs.artifact }}
       project_location: ${{ startsWith(matrix.id, 'windows-') && 'C:\llvm-project' || 'llvm-project' }}
+      SEVENZ_FILE_PATH: fixme pls
     runs-on: ${{ matrix.os }}
 
     steps:
@@ -56,7 +57,7 @@ jobs:
         with:
           msystem: ${{matrix.sys}}
           pacboy: |
-            openssl llvm clang lld polly:p ninja make cmake libffi libunwind pkg-config python python-sphinx z3 mingw-w64-x86_64-polly:
+            openssl llvm clang lld polly:p ninja make cmake libffi pkg-config python mingw-w64-x86_64-polly:
           # pacboy: 'openssl llvm clang lld polly:p ninja make cmake libffi pkg-config python mingw-w64-x86_64-polly:'
 
       - name: Setup Ninja
@@ -154,16 +155,27 @@ jobs:
       - name: Zip
         shell: pwsh
         run: |
-          mkdir dist
-          7z a ${{ env.project_location }}/dist/llvm.7z ${{ env.project_location }}/build/destdir/*
+          $SEVENZ_FILE_PATH = "${{ env.project_location }}/${{ matrix.id }}-${{ matrix.llvm_version }}-${{ matrix.build_tool }}-${{ matrix.cmake_build_type }}-${{ matrix.lto }}.7z"
+          echo "SEVENZ_FILE_PATH=$SEVENZ_FILE_PATH" | Out-File -FilePath $env:GITHUB_ENV -Encoding utf8 -Append
+          7z a "$SEVENZ_FILE_PATH" "${{ env.project_location }}/build/destdir/*"
 
-      - name: Upload Artifacts
-        uses: actions/upload-artifact@v3
+      #- name: Upload Artifacts
+      #  uses: actions/upload-artifact@v3
+      #  with:
+      #    name: ${{ matrix.id }}-${{ matrix.llvm_version }}-${{ matrix.cmake_build_type }}
+      #    path: ${{ env.project_location }}/dist
+      #    if-no-files-found: error
+      #    retention-days: 9
+
+      - name: Release
+        uses: softprops/action-gh-release@v1
         with:
-          name: ${{ matrix.id }}-${{ matrix.llvm_version }}-${{ matrix.cmake_build_type }}
-          path: ${{ env.project_location }}/dist
-          if-no-files-found: error
-          retention-days: 9
+          #tag: ${{ matrix.llvm_version }}
+          #name: Release ${{ matrix.llvm_version }}
+          draft: false
+          prerelease: false
+          files: |
+            ${{ env.SEVENZ_FILE_PATH }}.7z
 
   release:
     name: Release
@@ -196,14 +208,3 @@ jobs:
         shell: pwsh
         run: |
           Get-ChildItem -Recurse -Path ./artifacts | where { ! $_.PSIsContainer } | ForEach-Object { Move-Item -Path $_ -Destination $($_.FullName -replace 'artifacts[\\/](?<id>.*?)-(?<version>.*?)-(?<buildType>.*?)[\\/]llvm.7z','artifacts/${id}-${version}-${buildType}.7z') }
-
-      - name: Release
-        uses: softprops/action-gh-release@v1
-        with:
-          token: ${{ github.token }}
-          #tag: ${{ matrix.llvm_version }}
-          #name: Release ${{ matrix.llvm_version }}
-          draft: false
-          prerelease: false
-          files: |
-            artifacts/*.7z
