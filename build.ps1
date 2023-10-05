@@ -71,6 +71,8 @@ $SHARED_FLAGS = "-DCMAKE_BUILD_TYPE=$CMAKE_TYPE",
   "$CROSS_COMPILE",
   "$CMAKE_ARGUMENTS"
 
+$LTO_FLAGS = ""
+
 if ($LLVM_BUILD_TOOL -eq "vs") {
   # Run `cmake` to configure the project.
   msys2 cmake `
@@ -88,11 +90,21 @@ if ($LLVM_BUILD_TOOL -eq "vs") {
   # > be prepended with some other prefix.
   cmake --install . --strip --config Release
 } elseif ($LLVM_BUILD_TOOL -eq "clang") {
+  if ($LTO -eq 'Thin') {
+    $LTO_FLAGS = "-DCMAKE_C_FLAGS=`"-flto=thin`"",
+      "-DCMAKE_CXX_FLAGS=`"-flto=thin`"",
+      "-DCMAKE_C_LINK_FLAGS=`"-flto=thin`"",
+      "-DCMAKE_CXX_LINK_FLAGS=`"-flto=thin`"",
+      "-DLLVM_ENABLE_LTO=Off"
+  }
+
   cmake `
     -G Ninja `
     @SHARED_FLAGS `
     -DLLVM_HOST_TRIPLE=x86_64 `
     -DCMAKE_LINKER="C:\Program Files\LLVM\bin\lld-link.exe" `
+    -DLLVM_POLLY_LINK_INTO_TOOLS=ON `
+    @LTO_FLAGS `
     "$LlvmPath"
 
   # Showtime!
