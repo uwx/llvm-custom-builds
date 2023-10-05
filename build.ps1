@@ -63,8 +63,6 @@ $SHARED_FLAGS = "-DCMAKE_BUILD_TYPE=$CMAKE_TYPE",
   "-DLLVM_ENABLE_LTO=$LTO",
   # Enable pedantic mode. This disables compiler-specific extensions, if possible. Defaults to ON.
   "-DLLVM_ENABLE_PEDANTIC=OFF",
-  # compile with cmake header modules (might speed up build)
-  "-DLLVM_ENABLE_MODULES=ON",
 
   # enable sccache
   "-DCMAKE_C_COMPILER_LAUNCHER=sccache",
@@ -94,6 +92,8 @@ if ($LLVM_BUILD_TOOL -eq "vs") {
     -G Ninja `
     @SHARED_FLAGS `
     -DLLVM_HOST_TRIPLE=x86_64 `
+    -DLLVM_ENABLE_MODULES=ON `
+    -DCMAKE_LINKER="C:\Program Files\LLVM\lld.exe"
     "$LlvmPath"
 
   # Showtime!
