@@ -144,7 +144,7 @@ jobs:
           PATH=llvm-project/build/destdir/bin:llvm-project/build/destdir/usr/bin:$PATH clang --version
 
       - name: Inspect (Windows)
-        shell: bash
+        shell: pwsh
         if: |
           startsWith(matrix.id, 'windows-')
         run: |
