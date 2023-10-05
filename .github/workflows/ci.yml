@@ -24,16 +24,18 @@ jobs:
             # adds an additional copy per link, but it reliably works and
             # the additional size is not too large on Windows.
             tar_extra_args: '--dereference'
+          - { build_tool: mingw64, sys: mingw64, msys2: 'true' }
+          - { build_tool: mingw32, sys: mingw32, msys2: 'true' }
+          - { build_tool: mingw-ucrt64, sys: ucrt64, msys2: 'true' }
+          - { build_tool: mingw-clang64, sys: clang64, msys2: 'true' }
         build_tool: [clang, vs, mingw64, mingw32, mingw-ucrt64, mingw-clang64]
         id: ['windows-amd64']
         llvm_version: ['main', 'llvmorg-18-init-4631-gd50b56d1']
         llvm_repo_url: ['https://github.com/llvm/llvm-project.git']
-        cmake_build_type: ['Release', 'MinSizeRel']
-        sys: [vs, mingw64, mingw32, ucrt64, clang64]
+        cmake_build_type: ['Release'] # 'MinSizeRel']
         lto: ['Off', 'Thin', 'Full']
     env:
       mimalloc_artifact_name: ${{ needs.build-mimalloc.outputs.artifact }}
-      msys2: ${{ startsWith(matrix.build_tool, 'mingw') }}
       project_location: ${{ startsWith(matrix.id, 'windows-') && 'C:\llvm-project' || 'llvm-project' }}
     runs-on: ${{ matrix.os }}
 
@@ -50,7 +52,7 @@ jobs:
           env: true
 
       - uses: msys2/setup-msys2@v2
-        if: env.msys2 == 'true'
+        if: matrix.msys2 == 'true'
         with:
           msystem: ${{matrix.sys}}
           pacboy: |
@@ -161,7 +163,7 @@ jobs:
           name: ${{ matrix.id }}-${{ matrix.llvm_version }}-${{ matrix.cmake_build_type }}
           path: ${{ env.project_location }}/dist
           if-no-files-found: error
-          retention-days: 1
+          retention-days: 9
 
   release:
     name: Release
