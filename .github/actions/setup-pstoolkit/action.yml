@@ -9,6 +9,7 @@ runs:
         sudo: true
         scope: AllUsers
 
-    - shell: pwsh
+    - name: Add Github Actions Toolkit import to PowerShell Core profile
+      shell: pwsh
       run: |
         echo "Import-Module -Name 'hugoalh.GitHubActionsToolkit' -Global" | Out-File -FilePath $PROFILE.AllUsersAllHosts -Encoding utf8 -Append

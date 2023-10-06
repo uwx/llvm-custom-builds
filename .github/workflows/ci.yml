@@ -54,7 +54,8 @@ jobs:
 
       - uses: ./.github/actions/setup-pstoolkit
 
-      - uses: msys2/setup-msys2@v2
+      - name: Setup MSYS2 for MinGW builds
+        uses: msys2/setup-msys2@v2
         if: startsWith(matrix.id, 'windows-') && matrix.msys2 == 'true'
         with:
           update: true
@@ -63,20 +64,26 @@ jobs:
             openssl llvm clang lld polly:p ninja make cmake libffi pkg-config python gcc
           # pacboy: 'openssl llvm clang lld polly:p ninja make cmake libffi pkg-config python mingw-w64-x86_64-polly:'
 
-      - if: matrix.build_tool == 'mingw-ucrt64'
+      - name: Install `polly` (MinGW-UCRT64)
+        if: matrix.build_tool == 'mingw-ucrt64'
+        shell: msys2 {0}
         run: |
-          C:\Windows\system32\cmd.exe /D /S /C D:\a\_temp\setup-msys2\msys2.cmd -c pacman --noconfirm -Syyu --overwrite
-          C:\Windows\system32\cmd.exe /D /S /C D:\a\_temp\setup-msys2\msys2.cmd -c pacman -S mingw-w64-ucrt-x86_64-polly
+         pacman -S mingw-w64-ucrt-x86_64-polly
 
-      - if: matrix.build_tool == 'mingw-clang64'
+      - name: Install `polly` (MinGW-CLANG64)
+        if: matrix.build_tool == 'mingw-clang64'
+        shell: msys2 {0}
         run: |
-          C:\Windows\system32\cmd.exe /D /S /C D:\a\_temp\setup-msys2\msys2.cmd -c pacman --noconfirm -Syyu --overwrite
-          C:\Windows\system32\cmd.exe /D /S /C D:\a\_temp\setup-msys2\msys2.cmd -c pacman -S mingw-w64-clang-x86_64-polly
+          pacman -S mingw-w64-clang-x86_64-polly
 
-      - if: matrix.build_tool != 'mingw-ucrt64' && matrix.build_tool != 'mingw-clang64' && matrix.msys2 == 'true'
-        run: C:\Windows\system32\cmd.exe /D /S /C D:\a\_temp\setup-msys2\msys2.cmd -c pacboy --noconfirm -S --needed polly
+      - name: Install `polly` (MinGW, other)
+        if: matrix.build_tool != 'mingw-ucrt64' && matrix.build_tool != 'mingw-clang64' && matrix.msys2 == 'true'
+        shell: msys2 {0}
+        run: |
+          pacboy --noconfirm -S --needed polly
 
-      - run: Get-PSDrive
+      - name: Print free space
+        run: Get-PSDrive
 
       - name: Download static mimalloc
         if: startsWith(matrix.id, 'windows-')
