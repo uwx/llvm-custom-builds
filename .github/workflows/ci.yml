@@ -52,7 +52,7 @@ jobs:
       - name: Check out the code
         uses: actions/checkout@v3
 
-      - uses: ./.github/actions/setup-pstoolkit
+      - uses: uwx/actions/setup-pstoolkit@main
 
       - name: Setup MSYS2 for MinGW builds
         uses: msys2/setup-msys2@v2

@@ -128,8 +128,8 @@ if ($LLVM_BUILD_TOOL -eq "vs") {
     -G Ninja `
     @SHARED_FLAGS `
     -DLLVM_HOST_TRIPLE=x86_64 `
-    -DCMAKE_C_FLAGS="-D ffs=__builtin_ffs"
-    -DCMAKE_CXX_FLAGS="-D ffs=__builtin_ffs"
+    -DCMAKE_C_FLAGS="-D ffs=__builtin_ffs" `
+    -DCMAKE_CXX_FLAGS="-D ffs=__builtin_ffs" `
     "$LlvmPath"
 
   # Showtime!
