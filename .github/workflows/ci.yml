@@ -64,10 +64,14 @@ jobs:
           # pacboy: 'openssl llvm clang lld polly:p ninja make cmake libffi pkg-config python mingw-w64-x86_64-polly:'
 
       - if: matrix.build_tool == 'mingw-ucrt64'
-        run: C:\Windows\system32\cmd.exe /D /S /C D:\a\_temp\setup-msys2\msys2.cmd -c pacman --noconfirm -Syu --overwrite mingw-w64-ucrt-x86_64-polly
+        run: |
+          C:\Windows\system32\cmd.exe /D /S /C D:\a\_temp\setup-msys2\msys2.cmd -c pacman --noconfirm -Syyu --overwrite
+          C:\Windows\system32\cmd.exe /D /S /C D:\a\_temp\setup-msys2\msys2.cmd -c pacman -S mingw-w64-ucrt-x86_64-polly
 
       - if: matrix.build_tool == 'mingw-clang64'
-        run: C:\Windows\system32\cmd.exe /D /S /C D:\a\_temp\setup-msys2\msys2.cmd -c pacman --noconfirm -Syu --overwrite mingw-w64-clang-x86_64-polly
+        run: |
+          C:\Windows\system32\cmd.exe /D /S /C D:\a\_temp\setup-msys2\msys2.cmd -c pacman --noconfirm -Syyu --overwrite
+          C:\Windows\system32\cmd.exe /D /S /C D:\a\_temp\setup-msys2\msys2.cmd -c pacman -S mingw-w64-clang-x86_64-polly
 
       - if: matrix.build_tool != 'mingw-ucrt64' && matrix.build_tool != 'mingw-clang64' && matrix.msys2 == 'true'
         run: C:\Windows\system32\cmd.exe /D /S /C D:\a\_temp\setup-msys2\msys2.cmd -c pacboy --noconfirm -S --needed polly
