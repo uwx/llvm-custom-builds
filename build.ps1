@@ -87,14 +87,14 @@ if ($LLVM_BUILD_TOOL -eq "vs") {
     "$LlvmPath"
 
   # Showtime!
-  cmake --build . --config Release
+  cmake --build . --config $CMAKE_TYPE
 
   # Not using DESTDIR here, quote from
   # https://cmake.org/cmake/help/latest/envvar/DESTDIR.html
   # > `DESTDIR` may not be used on Windows because installation prefix
   # > usually contains a drive letter like in `C:/Program Files` which cannot
   # > be prepended with some other prefix.
-  cmake --install . --strip --config Release
+  cmake --install . --strip --config $CMAKE_TYPE
 } elseif ($LLVM_BUILD_TOOL -eq "clang") {
   if ($LTO -eq "Thin") {
     $LTO_FLAGS = "-DCMAKE_C_FLAGS=`"-flto=thin`"",
@@ -118,9 +118,9 @@ if ($LLVM_BUILD_TOOL -eq "vs") {
     "$LlvmPath"
 
   # Showtime!
-  cmake --build . --config MinSizeRel
+  cmake --build . --config $CMAKE_TYPE
 
-  cmake --install . --strip --config MinSizeRel
+  cmake --install . --strip --config $CMAKE_TYPE
 } else {
   $env:PATH = "$env:RUNNER_TEMP\msys64\bin;$env:RUNNER_TEMP\msys64\$env:MSYSTEM\bin;$env:RUNNER_TEMP\msys64\usr\bin;$env:RUNNER_TEMP\msys64\mingw64\bin;$env:RUNNER_TEMP\msys64\mingw32\bin;$env:PATH"
 
@@ -133,7 +133,7 @@ if ($LLVM_BUILD_TOOL -eq "vs") {
     "$LlvmPath"
 
   # Showtime!
-  cmake --build . --config MinSizeRel
+  cmake --build . --config $CMAKE_TYPE
 
-  cmake --install . --strip --config MinSizeRel
+  cmake --install . --strip --config $CMAKE_TYPE
 }

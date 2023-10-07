@@ -1,0 +1,5 @@
+{
+    "yaml.schemas": {
+        "https://json.schemastore.org/github-workflow.json": "file:///d%3A/New%20folder%20%282%29/llvm-custom-builds/.github/workflows/step.yml"
+    }
+}

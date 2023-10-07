@@ -17,240 +17,27 @@ jobs:
         include:
           - id: 'windows-amd64'
             os: 'windows-latest'
-            # When unpacking an archive on Windows, the symlinks can't be
-            # created unless the target path already exists. This causes
-            # problems when the linked file is ordered after the link
-            # inside the archive. Dereferencing the files when packing them
-            # adds an additional copy per link, but it reliably works and
-            # the additional size is not too large on Windows.
-            tar_extra_args: '--dereference'
-          - { build_tool: mingw64, sys: mingw64, msys2: 'true' }
-          - { build_tool: mingw32, sys: mingw32, msys2: 'true' }
-          - { build_tool: mingw-ucrt64, sys: ucrt64, msys2: 'true' }
-          - { build_tool: mingw-clang64, sys: clang64, msys2: 'true' }
-        exclude: # only Clang supports ThinLTO
-          - lto: Thin
-            build_tool: mingw64
-          - lto: Thin
-            build_tool: mingw32
-          - lto: Thin
-            build_tool: ucrt64
-        build_tool: [clang, vs, mingw64, mingw32, mingw-ucrt64, mingw-clang64]
+        exclude:
+          - build_tool: vs
+            lto: Thin
+          - build_tool: vs
+            lto: Full
+        build_tool: [clang, vs] #, mingw64, mingw32, mingw-ucrt64, mingw-clang64]
         id: ['windows-amd64']
         llvm_version: ['main', 'llvmorg-18-init-4631-gd50b56d1']
         llvm_repo_url: ['https://github.com/llvm/llvm-project.git']
         cmake_build_type: ['Release'] # 'MinSizeRel']
         lto: ['Off', 'Thin', 'Full']
-    env:
+    uses: ./.github/workflows/build.yml
+    with:
+      os: ${{ matrix.os }}
+      llvm_version: ${{ matrix.llvm_version }}
+      llvm_repo_url: ${{ matrix.llvm_repo_url }}
+      build_tool: ${{ matrix.build_tool }}
+      lto: ${{ matrix.lto }}
+      cmake_build_type: ${{ matrix.cmake_build_type }}
       mimalloc_artifact_name: ${{ needs.build-mimalloc.outputs.artifact }}
-      project_location: ${{ startsWith(matrix.id, 'windows-') && 'C:\llvm-project' || 'llvm-project' }}
-      SEVENZ_FILE_PATH: fixme pls
-      RELEASE_TAG: fixme pls
-    runs-on: ${{ matrix.os }}
-
-    steps:
-      - name: Check out the code
-        uses: actions/checkout@v3
-
-      - uses: uwx/actions/setup-pstoolkit@main
-
-      - name: Setup MSYS2 for MinGW builds
-        uses: msys2/setup-msys2@v2
-        if: startsWith(matrix.id, 'windows-') && matrix.msys2 == 'true'
-        with:
-          update: true
-          msystem: ${{matrix.sys}}
-          pacboy: |
-            openssl llvm clang lld polly:p ninja make cmake libffi pkg-config python gcc
-          # pacboy: 'openssl llvm clang lld polly:p ninja make cmake libffi pkg-config python mingw-w64-x86_64-polly:'
-
-      - name: Install `polly` (MinGW-UCRT64)
-        if: matrix.build_tool == 'mingw-ucrt64'
-        shell: msys2 {0}
-        run: |
-         pacman --noconfirm -S mingw-w64-ucrt-x86_64-polly
-
-      - name: Install `polly` (MinGW-CLANG64)
-        if: matrix.build_tool == 'mingw-clang64'
-        shell: msys2 {0}
-        run: |
-          pacman --noconfirm -S mingw-w64-clang-x86_64-polly
-
-      - name: Install `polly` (MinGW, other)
-        if: matrix.build_tool != 'mingw-ucrt64' && matrix.build_tool != 'mingw-clang64' && matrix.msys2 == 'true'
-        shell: msys2 {0}
-        run: |
-          pacboy --noconfirm -S --needed polly
-
-      - name: Print free space
-        run: Get-PSDrive
-
-      - name: Download static mimalloc
-        if: startsWith(matrix.id, 'windows-')
-        uses: actions/download-artifact@v2
-        with:
-          name: ${{ env.mimalloc_artifact_name }}
-          path: C:/mimalloc.lib
-
-      - name: Setup ccache
-        uses: hendrikmuhs/ccache-action@v1.2
-        with:
-          max-size: 512M
-          key: ${{ matrix.id }}-${{ matrix.llvm_version }}-${{ matrix.build_tool }}-${{ matrix.cmake_build_type }}-${{ matrix.lto }}
-          variant: sccache
-
-      - name: Install `ninja` on Ubuntu
-        if: startsWith(matrix.id, 'linux-')
-        shell: bash
-        run: |
-          sudo apt-get install ninja-build -y
-
-      - name: Install `ninja` on macOS
-        if: startsWith(matrix.id, 'darwin-')
-        shell: bash
-        run: |
-          brew install ninja
-
-      - name: Install `ninja` on Windows
-        if: startsWith(matrix.id, 'windows-') && matrix.build_tool == 'clang'
-        uses: seanmiddleditch/gha-setup-ninja@master
-
-      - name: Install LLVM and Clang on Windows
-        if: startsWith(matrix.id, 'windows-') && matrix.build_tool == 'clang'
-        uses: KyleMayes/install-llvm-action@master
-        with:
-          version: '17.0.2'
-          force-version: true
-          cached: false
-          env: true
-
-      - name: Install cross-compilation tools
-        if: matrix.id == 'linux-aarch64'
-        shell: bash
-        run: |
-          sudo apt-get install gcc-12-aarch64-linux-gnu g++-12-aarch64-linux-gnu gcc-12-multilib binutils-aarch64-linux-gnu libgcc-12-dev-arm64-cross libstdc++6-arm64-cross -y
-
-      - name: Install cross-compilation tools
-        if: matrix.id == 'linux-riscv64'
-        shell: bash
-        run: |
-          sudo apt-get install gcc-12-riscv64-linux-gnu g++-12-riscv64-linux-gnu gcc-12-multilib binutils-riscv64-linux-gnu libgcc-12-dev-riscv64-cross libstdc++6-riscv64-cross -y
-
-      - name: Build
-        if: matrix.id != 'windows-amd64' && matrix.id != 'linux-aarch64' && matrix.id != 'linux-riscv64'
-        shell: bash
-        run: |
-          ./build.sh "${{ matrix.llvm_version }}" "${{ matrix.llvm_repo_url }}"
-
-      - name: Build (linux-aarch64)
-        if: matrix.id == 'linux-aarch64'
-        shell: bash
-        run: |
-          ./build.sh "${{ matrix.llvm_version }}" "${{ matrix.llvm_repo_url }}" aarch64
-
-      - name: Build (linux-aarch64)
-        if: matrix.id == 'linux-riscv64'
-        shell: bash
-        run: |
-          ./build.sh "${{ matrix.llvm_version }}" "${{ matrix.llvm_repo_url }}" riscv64
-
-      - name: Build (Windows)
-        if: matrix.id == 'windows-amd64'
-        shell: pwsh
-        run: |
-          ./build.ps1 "${{ matrix.llvm_version }}" "${{ matrix.llvm_repo_url }}" "${{ matrix.build_tool }}" "${{ matrix.cmake_build_type }}" "${{ matrix.lto }}" "${{ env.project_location }}"
-
-      - name: Inspect (non-Windows)
-        shell: bash
-        if: |
-          !startsWith(matrix.id, 'windows-')
-        run: |
-          PATH=llvm-project/build/destdir/bin:llvm-project/build/destdir/usr/bin:$PATH llvm-config --version
-          PATH=llvm-project/build/destdir/bin:llvm-project/build/destdir/usr/bin:$PATH clang --version
-
-      - name: Inspect (Windows)
-        shell: pwsh
-        if: |
-          startsWith(matrix.id, 'windows-')
-        run: |
-          $env:PATH = "$env:PROJECT_LOCATION\build\destdir\bin;$env:PROJECT_LOCATION\build\destdir\usr\bin;$env:PATH"
-          llvm-config --version
-          clang --version
-
-      - name: Zip
-        shell: pwsh
-        run: |
-          Set-GitHubActionsEnv SEVENZ_FILE_PATH "${{ env.project_location }}/${{ matrix.id }}-${{ matrix.llvm_version }}-${{ matrix.build_tool }}-${{ matrix.cmake_build_type }}-${{ matrix.lto }}.7z"
-
-          7z a "$env:SEVENZ_FILE_PATH" "$env:PROJECT_LOCATION/build/destdir/*"
-
-      #- name: Upload Artifacts
-      #  uses: actions/upload-artifact@v3
-      #  with:
-      #    name: ${{ matrix.id }}-${{ matrix.llvm_version }}-${{ matrix.cmake_build_type }}
-      #    path: ${{ env.project_location }}/dist
-      #    if-no-files-found: error
-      #    retention-days: 9
-
-      - name: Create Release
-        # You may pin to the exact commit or the version.
-        # uses: ncipollo/release-action@a2e71bdd4e7dab70ca26a852f29600c98b33153e
-        uses: ncipollo/release-action@v1.12.0
-        with:
-          # An optional flag which indicates if we should update a release if it already exists. Defaults to false.
-          allowUpdates: true # optional, default is
-          # An optional flag which indicates if artifact read or upload errors should fail the build.
-          artifactErrorsFailBuild: false # optional, default is
-          # An optional set of paths representing artifacts to upload to the release. This may be a single path or a comma delimited list of paths (or globs)
-          artifacts: ${{ env.SEVENZ_FILE_PATH }}.7z
-          # The content type of the artifact. Defaults to raw
-          artifactContentType: raw # optional, default is
-          # An optional body for the release.
-          # body: # optional, default is
-          # An optional body file for the release. This should be the path to the file
-          # bodyFile: # optional, default is
-          # An optional commit reference. This will be used to create the tag if it does not exist.
-          commit: ${{github.sha}} # optional, default is
-          # When provided this will generate a discussion of the specified category. The category must exist otherwise this will cause the action to fail. This isn't used with draft releases
-          # discussionCategory: # optional, default is
-          # Optionally marks this release as a draft release. Set to true to enable.
-          draft: false # optional, default is
-          # Indicates if release notes should be automatically generated.
-          generateReleaseNotes: false # optional, default is false
-          # Indicates if the release should be the "latest" release or not.
-          makeLatest: true # optional, default is legacy
-          # An optional name for the release. If this is omitted the tag will be used.
-          name: LLVM ${{ matrix.llvm_version }} # optional, default is
-          ## Indicates if the release body should be omitted.
-          #omitBody: # optional, default is false
-          ## Indicates if the release body should be omitted during updates. The body will still be applied for newly created releases. This will preserve the existing body during updates.
-          #omitBodyDuringUpdate: # optional, default is false
-          ## Indicates if the draft flag should be omitted during updates. The draft flag will still be applied for newly created releases. This will preserve the existing draft state during updates.
-          #omitDraftDuringUpdate: # optional, default is false
-          ## Indicates if the release name should be omitted.
-          #omitName: # optional, default is false
-          ## Indicates if the release name should be omitted during updates. The name will still be applied for newly created releases. This will preserve the existing name during updates.
-          #omitNameDuringUpdate: # optional, default is false
-          ## Indicates if the prerelease flag should be omitted during updates. The prerelease flag will still be applied for newly created releases. This will preserve the existing prerelease state during updates.
-          #omitPrereleaseDuringUpdate: # optional, default is false
-          # Optionally specify the owner of the repo where the release should be generated. Defaults to current repo's owner.
-          # owner: # optional, default is
-          # Optionally marks this release as prerelease. Set to true to enable.
-          prerelease: true # optional, default is
-          # Indicates if existing release artifacts should be removed, Defaults to false.
-          removeArtifacts: false # optional, default is false
-          # Indicates if existing release artifacts should be replaced. Defaults to true.
-          replacesArtifacts: true # optional, default is true
-          # Optionally specify the repo where the release should be generated. Defaults to current repo
-          # repo: # optional, default is
-          # When skipIfReleaseExists is enabled the action will be skipped if a non-draft release already exists for the provided tag.
-          # skipIfReleaseExists: true # optional, default is false
-          # An optional tag for the release. If this is omitted the git ref will be used (if it is a tag).
-          tag: ${{ matrix.llvm_version }}-${{ github.run_id }} # optional, default is
-          # The Github token.
-          token: ${{ github.token }}
-          # When allowUpdates is enabled, this will fail the action if the release it is updating is not a draft or a prerelease.
-          # updateOnlyUnreleased: # optional, default is false
+      run_id: ${{ github.run_id }}
 
 #  release:
 #    name: Release
