@@ -5,7 +5,7 @@ on:
     inputs:
       os: { required: true, type: string }
       llvm_version: { required: true, type: string }
-      llvm_repo_url: { required: false, default: https://github.com/llvm/llvm-project.git, type: string }
+      llvm_repo_url: { required: false, default: 'https://github.com/llvm/llvm-project.git', type: string }
       build_tool: { required: false, default: clang, type: string } # clang or vs
       lto: { required: false, default: Thin, type: string } # Off/Thin/Full
       cmake_build_type: { required: false, default: 'Release', type: string } # MinSizeRel
