@@ -24,7 +24,7 @@ jobs:
     if: '!inputs.finished'
 
     env:
-      project_location: 'C:\llvm-project'
+      PROJECT_LOCATION: 'C:\llvm-project'
       SEVENZ_FILE_PATH: fixme pls
       RELEASE_TAG: fixme pls
       BUILD_KEY: windows-latest-${{ inputs.llvm_version }}-${{ inputs.build_tool }}-${{ inputs.cmake_build_type }}-${{ inputs.lto }}
@@ -34,6 +34,11 @@ jobs:
     steps:
       - name: Check out the code
         uses: actions/checkout@v3
+
+      - name: Copy LLVM stuff to C drive
+        shell: pwsh
+        # if: startsWith(matrix.id, 'windows-') && matrix.msys2 == 'true'
+        run: Copy-Item -Path . -Destination $env:PROJECT_LOCATION -Recurse
 
       - uses: uwx/actions/setup-pstoolkit@main
 
