@@ -24,7 +24,7 @@ jobs:
             lto: Full
         build_tool: [clang, vs] #, mingw64, mingw32, mingw-ucrt64, mingw-clang64]
         id: ['windows-amd64']
-        llvm_version: ['main', 'llvmorg-18-init-4631-gd50b56d1']
+        llvm_version: ['main', 'llvmorg-18-init-17730-gf670112a']
         llvm_repo_url: ['https://github.com/llvm/llvm-project.git']
         cmake_build_type: ['Release'] # 'MinSizeRel']
         lto: ['Off', 'Thin', 'Full']
