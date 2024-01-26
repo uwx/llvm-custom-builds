@@ -35,10 +35,9 @@ jobs:
       - name: Check out the code
         uses: actions/checkout@v3
 
-      - name: Copy LLVM stuff to C drive
-        shell: pwsh
-        # if: startsWith(matrix.id, 'windows-') && matrix.msys2 == 'true'
-        run: Copy-Item -Path . -Destination $env:PROJECT_LOCATION -Recurse
+      - id: install-7z-zstd
+        name: Install 7zip-zstd codecs
+        uses: ./.github/actions/7zip-zstd
 
       - uses: uwx/actions/setup-pstoolkit@main
 
@@ -141,6 +140,8 @@ jobs:
       #  shell: bash
       #  run: |
       #    ./build.sh "${{ matrix.llvm_version }}" "${{ matrix.llvm_repo_url }}" riscv64
+
+      - run: mkdir $env:PROJECT_LOCATION
 
       - name: Build (Windows)
         id: stage

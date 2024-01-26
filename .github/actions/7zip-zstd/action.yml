@@ -1,0 +1,49 @@
+name: Install 7zip-zstd codecs
+description: Installs 7zip-zstd codecs
+inputs:
+  version:
+    description: Version of 7zip-zstd codecs to install
+    required: false
+    default: 22.01-v1.5.5-R3
+outputs:
+  sevenz-actual-path:
+    description: Computed path to 7-zip install directory
+    value: ${{ steps.install.outputs.SEVENZ_PATH }}
+runs:
+  using: composite
+  steps:
+    - if: runner.os != 'Windows'
+      shell: bash
+      working-directory: ${{ runner.temp }}
+      run: |
+        aria2c -x 16 "https://github.com/p7zip-project/p7zip/releases/download/v17.05/linux-cmake-p7zip.7z"
+        7z x "linux-cmake-p7zip.7z" -op7zip
+        sudo mv ./p7zip/* /opt/p7z
+        sudo mv /opt/p7z/7z_ /opt/p7z/7z
+        rm -r p7zip linux-cmake-p7zip.7z
+        echo "/opt/p7z" >> $GITHUB_PATH
+
+    - if: runner.os == 'Windows'
+      id: install
+      shell: pwsh
+      working-directory: ${{ runner.temp }}
+      run: |
+        aria2c -x 16 "https://www.tc4shell.com/binary/Modern7z.zip"
+
+        $spliter = "path to executable:"
+        $7zLocation = "$(Split-Path -parent ((7z --shimgen-noop | Select-String $spliter) -split $spliter | ForEach-Object Trim)[1])"
+        $installLocation = "$(Join-Path $7zLocation "Formats")"
+
+        Expand-Archive -Path Modern7z.zip -DestinationPath .\Modern7z
+        Move-Item -Path .\Modern7z\64 -Destination $installLocation
+
+        echo "SEVENZ_PATH=$7zLocation" | Out-File -FilePath $env:GITHUB_OUTPUT -Encoding utf8 -Append
+
+        echo $installLocation
+
+        Remove-Item -Path Modern7z.zip -Force
+        Remove-Item -Path Modern7z -Force -Recurse
+
+        exit 0
+    - shell: pwsh
+      run: 7z i
