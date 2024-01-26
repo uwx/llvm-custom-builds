@@ -47,7 +47,7 @@ $CROSS_COMPILE = ""
 
 $SHARED_FLAGS = "-DCMAKE_BUILD_TYPE=$CMAKE_TYPE",
   "-DCMAKE_INSTALL_PREFIX=destdir",
-  "-DLLVM_ENABLE_PROJECTS=`"clang;lld;clang-tools-extra;polly`"",
+  "-DLLVM_ENABLE_PROJECTS=`"clang;lld;clang-tools-extra`"",
   # "-DLLVM_ENABLE_TERMINFO=OFF",
   # "-DLLVM_ENABLE_ZLIB=OFF",
   "-DLLVM_INCLUDE_DOCS=OFF",
