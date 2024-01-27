@@ -170,6 +170,7 @@ jobs:
       #    PATH=llvm-project/build/destdir/bin:llvm-project/build/destdir/usr/bin:$PATH clang --version
 
       - name: Inspect (Windows)
+        if: steps.stage.outputs.outcome == 'success'
         shell: pwsh
         #if: |
         #  startsWith(matrix.id, 'windows-')
@@ -179,6 +180,7 @@ jobs:
           clang --version
 
       - name: Zip
+        if: steps.stage.outputs.outcome == 'success'
         shell: pwsh
         run: |
           Set-GitHubActionsEnv SEVENZ_FILE_PATH "${{ env.project_location }}/${{ env.build_key }}.7z"
@@ -194,6 +196,7 @@ jobs:
       #    retention-days: 9
 
       - name: Create Release
+        if: steps.stage.outputs.outcome == 'success'
         # You may pin to the exact commit or the version.
         # uses: ncipollo/release-action@a2e71bdd4e7dab70ca26a852f29600c98b33153e
         uses: ncipollo/release-action@v1.12.0
