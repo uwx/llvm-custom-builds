@@ -21,7 +21,13 @@ if ([string]::IsNullOrEmpty($LLVM_VERSION)) {
 
 # Clone the LLVM project.
 if (-not (Test-Path -Path "llvm-project" -PathType Container)) {
-  git clone "$LLVM_REPO_URL" "$PROJECT_LOCATION"
+  if (Test-Path -Path "$PROJECT_LOCATION\build") {
+    git clone "$LLVM_REPO_URL" "C:\atemp"
+    Move-Item "$PROJECT_LOCATION\build" "C:\atemp\build"
+    Move-Item "C:\atemp" "$PROJECT_LOCATION"
+  } else {
+    git clone "$LLVM_REPO_URL" "$PROJECT_LOCATION"
+  }
 }
 
 Set-Location "$PROJECT_LOCATION"
