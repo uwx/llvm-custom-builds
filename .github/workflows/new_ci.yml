@@ -16,7 +16,7 @@ jobs:
 
     runs-on: windows-latest
     env:
-      VERSION: '18.1.8'
+      VERSION: '18.1.7'
     
     steps:
       - uses: actions/checkout@v4
