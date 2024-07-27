@@ -47,11 +47,17 @@ jobs:
             set SZIP=7za.exe
           )
           
-          curl -sfL https://github.com/llvm/llvm-project/releases/download/llvmorg-%VERSION%/llvm-project-%VERSION%.src.tar.xz ^
-            | %SZIP% x -bb0 -txz -si -so ^
-            | %SZIP% x -bb0 -ttar -si -aoa 1>nul 2>nul
-          del /y pax_global_header 1>nul 2>nul
+          ::curl -sfL https://github.com/llvm/llvm-project/releases/download/llvmorg-%VERSION%/llvm-project-%VERSION%.src.tar.xz ^
+          ::  | %SZIP% x -bb0 -txz -si -so ^
+          ::  | %SZIP% x -bb0 -ttar -si -aoa 1>nul 2>nul
+          ::del /y pax_global_header 1>nul 2>nul
           
+          git clone https://github.com/llvm/llvm-project.git
+          cd llvm-project
+          pushd llvm/projects
+          git clone https://github.com/KhronosGroup/SPIRV-LLVM-Translator.git
+          popd
+          cd ..
           
           
           where /Q cl.exe || (
@@ -74,15 +80,16 @@ jobs:
           rem ** Without clang-tools-extra & lldb it takes ~15min
           cmake ^
             -G Ninja ^
-            -S "llvm-project-%VERSION%.src\llvm" ^
+            -S "llvm-project\llvm" ^
             -B "llvm-project-%VERSION%.build" ^
             -D CMAKE_INSTALL_PREFIX="%CD%\llvm-project-%VERSION%" ^
             -D CMAKE_BUILD_TYPE=Release ^
             -D CMAKE_MSVC_RUNTIME_LIBRARY=MultiThreaded ^
             -D BUILD_SHARED_LIBS=OFF ^
             -D LLVM_OPTIMIZED_TABLEGEN=ON ^
-            -D LLVM_ENABLE_PROJECTS="clang;clang-tools-extra;lld;lldb;compiler-rt;polly" ^
+            -D LLVM_ENABLE_PROJECTS="clang;clang-tools-extra;lld;lldb;compiler-rt;polly;llvm-spirv" ^
             -D LLVM_TARGETS_TO_BUILD="AArch64;ARM;WebAssembly;X86" ^
+            -DLLVM_SPIRV_INCLUDE_TESTS=OFF ^
             -D LLVM_BUILD_LLVM_C_DYLIB=OFF ^
             -D LLVM_ENABLE_BACKTRACES=OFF ^
             -D LLVM_ENABLE_UNWIND_TABLES=OFF ^
